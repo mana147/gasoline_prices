@@ -1,0 +1,15 @@
+{
+  "servers": {
+    "dbhub": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@bytebase/dbhub@latest",
+        "--transport",
+        "stdio",
+        "--dsn",
+        "sqlite:///Users/macbook/Desktop/gasoline_prices/database/fuel_data.db"
+      ]
+    }
+  }
+}

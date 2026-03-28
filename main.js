@@ -5,13 +5,18 @@ const bodyParser = require('body-parser');
 const sql = require('mssql');
 const axios = require("axios");
 const sqlite3 = require('sqlite3').verbose();
+const crypto = require('crypto');
+const { tinhGiaCuocTheoDauDO } = require('./calculator_gasoline');
+
+// Token storage (in-memory - use Redis for production)
+const activeTokens = new Map();
 
 // Initialize the app
 const app = express();
 const PORT = process.env.PORT || 8000;
 const API_BASE_URL = 'https://giaxanghomnay.com/api/pvdate/';
 const API_TIMEOUT = 10000; // 10 seconds
-const SQLITE_DB_PATH = './DB/fuel_data.db';
+const SQLITE_DB_PATH = './database/fuel_data.db';
 
 // --------------------------------------------------------------------
 
@@ -136,171 +141,6 @@ function getFuelByTitle(DATA, brand, title) {
         zone1_price: data.zone1_price || 0,
         zone2_price: data.zone2_price || null
     }
-}
-
-// Function to calculate surcharge based on DO fuel price and container type
-/*
-"hang_20" = container hàng ≤ 20'
-"hang_40" = container hàng ≥ 40'
-"rong_20" = container rỗng ≤ 20'
-"rong_40" = container rỗng ≥ 40'
-*/
-function tinhGiaCuocTheoDauDO(giaDauDO, loaiContainer, giaCuoc) {
-    const bangPhuThu = [
-        {
-            min: 0,
-            max: 23000,
-            surcharge: {
-                "hang_20": 0,
-                "hang_40": 0,
-                "hang_45": 0,
-
-                "rong_20": 0,
-                "rong_40": 0,
-                "rong_45": 0,
-            },
-        },
-        {
-            min: 23001,
-            max: 26000,
-            surcharge: {
-                "hang_20": 50000,
-                "hang_40": 60000,
-                "hang_45": 60000,
-
-                "rong_20": 35000,
-                "rong_40": 50000,
-                "rong_45": 50000,
-            },
-        },
-        {
-            min: 26001,
-            max: 29000,
-            surcharge: {
-                "hang_20": 100000,
-                "hang_40": 120000,
-                "hang_45": 120000,
-
-                "rong_20": 70000,
-                "rong_40": 100000,
-                "rong_45": 100000,
-            },
-        },
-        {
-            min: 29001,
-            max: 32000,
-            surcharge: {
-                "hang_20": 150000,
-                "hang_40": 180000,
-                "hang_45": 180000,
-
-                "rong_20": 105000,
-                "rong_40": 150000,
-                "rong_45": 150000,
-            },
-        },
-        {
-            min: 32001,
-            max: 35000,
-            surcharge: {
-                "hang_20": 200000,
-                "hang_40": 240000,
-                "hang_45": 240000,
-
-                "rong_20": 140000,
-                "rong_40": 200000,
-                "rong_45": 200000,
-            },
-        },
-        {
-            min: 35001,
-            max: 38000,
-            surcharge: {
-                "hang_20": 250000,
-                "hang_40": 300000,
-                "hang_45": 300000,
-
-                "rong_20": 175000,
-                "rong_40": 250000,
-                "rong_45": 250000,
-            },
-        },
-        {
-            min: 38001,
-            max: 41000,
-            surcharge: {
-                "hang_20": 300000,
-                "hang_40": 360000,
-                "hang_45": 360000,
-
-                "rong_20": 210000,
-                "rong_40": 300000,
-                "rong_45": 300000,
-            },
-        },
-        {
-            min: 41001,
-            max: 44000,
-            surcharge: {
-                "hang_20": 350000,
-                "hang_40": 420000,
-                "hang_45": 420000,
-
-                "rong_20": 245000,
-                "rong_40": 350000,
-                "rong_45": 350000,
-            },
-        },
-        {
-            min: 44001,
-            max: 47000,
-            surcharge: {
-                "hang_20": 400000,
-                "hang_40": 480000,
-                "hang_45": 480000,
-
-                "rong_20": 280000,
-                "rong_40": 400000,
-                "rong_45": 400000,
-            },
-        },
-        {
-            min: 47001,
-            max: 50000,
-            surcharge: {
-                "hang_20": 450000,
-                "hang_40": 540000,
-                "hang_45": 540000,
-
-                "rong_20": 315000,
-                "rong_40": 450000,
-                "rong_45": 450000,
-            },
-        },
-    ];
-
-    const muc = bangPhuThu.find(
-        (item) => giaDauDO >= item.min && giaDauDO <= item.max
-    );
-
-    if (!muc) {
-        throw new Error("Giá dầu DO ngoài phạm vi bảng phụ thu");
-    }
-
-    if (!muc.surcharge.hasOwnProperty(loaiContainer)) {
-        throw new Error("Loại container không hợp lệ");
-    }
-
-    const phuThu = muc.surcharge[loaiContainer];
-    const tongTien = giaCuoc + phuThu;
-
-    return {
-        giaDauDO,
-        loaiContainer,
-        giaCuoc,
-        phuThu,
-        tongTien,
-    };
 }
 
 // Define main function to execute queries
@@ -433,32 +273,405 @@ async function maintest() {
             'active',
             new Date().toISOString()
         );
-        stmt.finalize();                
-
+        stmt.finalize();
 
     } catch (err) {
         console.error('Error in maintest:', err);
     }
 };
 
-maintest();
+// maintest();
 
 // Define a simple route
 app.get('/', (req, res) => {
-    res.send('service for MPC fuel price and surcharge calculation');
+    // tạo giao diện đơn giản để hiển thị thông tin về dịch vụ tính cước phụ thu nhiên liệu DO của MPC
+    // res từ index.html trong thư mục public
+    res.sendFile(__dirname + '/public/index.html');
+    // res.send('service for MPC fuel price and surcharge calculation');
 });
 
-app.get('/api/fuel-price', async (req, res) => {
+// Route đăng nhập
+app.get('/login', (req, res) => {
+    res.sendFile(__dirname + '/public/login.html');
+});
+
+// ví dụ : localhost:3000/api/get_fuel_price?date=2026-03-25 
+app.get('/api/get_fuel_price', async (req, res) => {
     try {
         let date = req.query.date || new Date().toISOString().split('T')[0]; // Get date from query or use today's date
+
+        console.log('date_in :>> ', date);
+
+        // lấy dữ liệu giá nhiên liệu DO 0,05S-II của Petrolimex từ API https://giaxanghomnay.com/api/pvdate/{date} với date là ngày hiện tại
+
+        // let date = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
         const apiData = await getFuelByDate(date);
-        res.json(apiData);
+        const result = getFuelByTitle(apiData, "petrolimex", "DO 0,05S-II");
+        const giaDauDO = result.zone1_price || 0; // Use actual DO price from Petrolimex data or default to 0
+
+        // tính cước phụ thu theo bảng phụ thu đã cho ở trên với giá nhiên liệu DO 0,05S-II lấy được từ API và loại container là "hang_20", "hang_40", "hang_45" ,  "rong_20", "rong_40", "rong_45" 
+
+        const hang_20 = tinhGiaCuocTheoDauDO(giaDauDO, "hang_20", 0);
+        const hang_40 = tinhGiaCuocTheoDauDO(giaDauDO, "hang_40", 0);
+        const hang_45 = tinhGiaCuocTheoDauDO(giaDauDO, "hang_45", 0);
+
+        const rong_20 = tinhGiaCuocTheoDauDO(giaDauDO, "rong_20", 0);
+        const rong_40 = tinhGiaCuocTheoDauDO(giaDauDO, "rong_40", 0);
+        const rong_45 = tinhGiaCuocTheoDauDO(giaDauDO, "rong_45", 0);
+
+        // lưu kết quả tính cước phụ thu vào database sqlite với các trường: date, brand, title, zone1_price, zone2_price (nếu có), hang_20, hang_40, hang_45, rong_20, rong_40, rong_45 , status , createdAt
+        const stmt = db.prepare(`INSERT INTO fuel_prices 
+            (date, brand, title, zone1_price, zone2_price, hang_20, hang_40, hang_45, rong_20, rong_40, rong_45, status, createdAt) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+        stmt.run(
+            date,
+            "petrolimex",
+            "DO 0,05S-II",
+            result.zone1_price,
+            result.zone2_price,
+            hang_20.phuThu,
+            hang_40.phuThu,
+            hang_45.phuThu,
+            rong_20.phuThu,
+            rong_40.phuThu,
+            rong_45.phuThu,
+            'active',
+            new Date().toISOString()
+        );
+        stmt.finalize();
+
+        res.json({
+            date,
+            brand: "petrolimex",
+            title: "DO 0,05S-II",
+            zone1_price: result.zone1_price,
+            zone2_price: result.zone2_price,
+            hang_20: hang_20.phuThu,
+            hang_40: hang_40.phuThu,
+            hang_45: hang_45.phuThu,
+            rong_20: rong_20.phuThu,
+            rong_40: rong_40.phuThu,
+            rong_45: rong_45.phuThu 
+        });
     } catch (err) {
         console.error('Error fetching fuel price:', err);
         res.status(500).json({ error: 'Failed to fetch fuel price' });
     }
 });
 
+// ============================================================================
+// AUTH API - Login, Register, Users
+// ============================================================================
+
+// Generate random token
+function generateToken() {
+    return crypto.randomBytes(32).toString('hex');
+}
+
+// Middleware xác thực token
+function authMiddleware(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+    if (!token) {
+        return res.status(401).json({
+            success: false,
+            message: 'Chưa đăng nhập. Vui lòng cung cấp token!'
+        });
+    }
+
+    const userData = activeTokens.get(token);
+    if (!userData) {
+        return res.status(401).json({
+            success: false,
+            message: 'Token không hợp lệ hoặc đã hết hạn!'
+        });
+    }
+
+    // Check token expiry (24 hours)
+    if (Date.now() > userData.expiresAt) {
+        activeTokens.delete(token);
+        return res.status(401).json({
+            success: false,
+            message: 'Token đã hết hạn. Vui lòng đăng nhập lại!'
+        });
+    }
+
+    req.user = userData.user;
+    req.token = token;
+    next();
+}
+
+// Middleware kiểm tra quyền admin
+function adminMiddleware(req, res, next) {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({
+            success: false,
+            message: 'Không có quyền truy cập. Chỉ admin mới được phép!'
+        });
+    }
+    next();
+}
+
+// POST /api/login - Đăng nhập
+app.post('/api/login', (req, res) => {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Vui lòng nhập username và password' 
+        });
+    }
+
+    const query = `SELECT id, username, email, full_name, role, status, created_at, last_login
+                   FROM users 
+                   WHERE username = ? AND password = ? AND status = 'active'`;
+
+    db.get(query, [username, password], (err, user) => {
+        if (err) {
+            console.error('Login error:', err);
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Lỗi server' 
+            });
+        }
+
+        if (!user) {
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Username hoặc password không đúng' 
+            });
+        }
+
+        // Generate token
+        const token = generateToken();
+        const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+
+        // Store token
+        activeTokens.set(token, {
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                full_name: user.full_name,
+                role: user.role
+            },
+            expiresAt
+        });
+
+        // Update last_login
+        db.run(`UPDATE users SET last_login = ? WHERE id = ?`, 
+            [new Date().toISOString(), user.id]);
+
+        res.json({
+            success: true,
+            message: 'Đăng nhập thành công',
+            token,
+            expiresIn: '24h',
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                full_name: user.full_name,
+                role: user.role
+            }
+        });
+    });
+});
+
+// POST /api/logout - Đăng xuất
+app.post('/api/logout', authMiddleware, (req, res) => {
+    activeTokens.delete(req.token);
+    res.json({
+        success: true,
+        message: 'Đăng xuất thành công'
+    });
+});
+
+// GET /api/me - Lấy thông tin user hiện tại
+app.get('/api/me', authMiddleware, (req, res) => {
+    res.json({
+        success: true,
+        user: req.user
+    });
+});
+
+// POST /api/register - Đăng ký
+app.post('/api/register', (req, res) => {
+    const { username, password, email, full_name } = req.body;
+
+    if (!username || !password) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Vui lòng nhập username và password' 
+        });
+    }
+
+    // Check if username exists
+    db.get(`SELECT id FROM users WHERE username = ?`, [username], (err, existing) => {
+        if (err) {
+            console.error('Register error:', err);
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Lỗi server' 
+            });
+        }
+
+        if (existing) {
+            return res.status(409).json({ 
+                success: false, 
+                message: 'Username đã tồn tại' 
+            });
+        }
+
+        // Insert new user
+        const query = `INSERT INTO users (username, password, email, full_name, role, status, created_at, updated_at) 
+                       VALUES (?, ?, ?, ?, 'user', 'active', ?, ?)`;
+        const now = new Date().toISOString();
+
+        db.run(query, [username, password, email || null, full_name || null, now, now], function(err) {
+            if (err) {
+                console.error('Register insert error:', err);
+                return res.status(500).json({ 
+                    success: false, 
+                    message: 'Lỗi khi tạo tài khoản' 
+                });
+            }
+
+            res.status(201).json({
+                success: true,
+                message: 'Đăng ký thành công',
+                user: {
+                    id: this.lastID,
+                    username,
+                    email,
+                    full_name,
+                    role: 'user'
+                }
+            });
+        });
+    });
+});
+
+// GET /api/users - Lấy danh sách users (chỉ admin)
+app.get('/api/users', authMiddleware, adminMiddleware, (req, res) => {
+    const query = `SELECT id, username, email, full_name, role, status, created_at, last_login 
+                   FROM users 
+                   ORDER BY created_at DESC`;
+
+    db.all(query, [], (err, users) => {
+        if (err) {
+            console.error('Get users error:', err);
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Lỗi server' 
+            });
+        }
+
+        res.json({
+            success: true,
+            count: users.length,
+            users
+        });
+    });
+});
+
+// GET /api/users/:id - Lấy thông tin user theo ID
+app.get('/api/users/:id', authMiddleware, (req, res) => {
+    const { id } = req.params;
+
+    const query = `SELECT id, username, email, full_name, role, status, created_at, last_login 
+                   FROM users 
+                   WHERE id = ?`;
+
+    db.get(query, [id], (err, user) => {
+        if (err) {
+            console.error('Get user error:', err);
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Lỗi server' 
+            });
+        }
+
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Không tìm thấy user' 
+            });
+        }
+
+        res.json({
+            success: true,
+            user
+        });
+    });
+});
+
+// PUT /api/users/:id - Cập nhật thông tin user
+app.put('/api/users/:id', authMiddleware, (req, res) => {
+    const { id } = req.params;
+    const { email, full_name, role, status } = req.body;
+
+    const query = `UPDATE users 
+                   SET email = COALESCE(?, email),
+                       full_name = COALESCE(?, full_name),
+                       role = COALESCE(?, role),
+                       status = COALESCE(?, status),
+                       updated_at = ?
+                   WHERE id = ?`;
+
+    db.run(query, [email, full_name, role, status, new Date().toISOString(), id], function(err) {
+        if (err) {
+            console.error('Update user error:', err);
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Lỗi server' 
+            });
+        }
+
+        if (this.changes === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Không tìm thấy user' 
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Cập nhật thành công'
+        });
+    });
+});
+
+// DELETE /api/users/:id - Xóa user (chỉ admin)
+app.delete('/api/users/:id', authMiddleware, adminMiddleware, (req, res) => {
+    const { id } = req.params;
+
+    db.run(`DELETE FROM users WHERE id = ?`, [id], function(err) {
+        if (err) {
+            console.error('Delete user error:', err);
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Lỗi server' 
+            });
+        }
+
+        if (this.changes === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Không tìm thấy user' 
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Xóa user thành công'
+        });
+    });
+});
+
+// ============================================================================
 
 // Start the server
 app.listen(PORT, () => {

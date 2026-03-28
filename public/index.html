@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MPC - Tính Cước Phụ Thu Nhiên Liệu DO</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        .header p {
+            opacity: 0.9;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .form-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .form-group label {
+            font-weight: 600;
+            color: #333;
+        }
+        .form-group input[type="date"] {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        .form-group input[type="date"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .result-header h2 {
+            color: #333;
+            font-size: 1.3rem;
+        }
+        .price-tag {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .info-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .info-item label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        .info-item span {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        .surcharge-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .surcharge-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        .surcharge-item {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            transition: transform 0.2s;
+        }
+        .surcharge-item:hover {
+            transform: translateY(-3px);
+        }
+        .surcharge-item.hang {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .surcharge-item.rong {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        .surcharge-item .size {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        .surcharge-item .value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .loading .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f0f0f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .error {
+            background: #fee;
+            color: #c00;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .hidden {
+            display: none;
+        }
+        @media (max-width: 600px) {
+            .surcharge-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛢️ MPC Fuel Surcharge Calculator</h1>
+            <p>Dịch vụ tính cước phụ thu nhiên liệu DO - Petrolimex</p>
+        </div>
+
+        <div class="card">
+            <div class="form-group">
+                <label for="dateInput">Chọn ngày:</label>
+                <input type="date" id="dateInput">
+                <button class="btn" id="fetchBtn" onclick="fetchFuelPrice()">
+                    Tra cứu giá
+                </button>
+            </div>
+        </div>
+
+        <div id="loadingSection" class="card hidden">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Đang tải dữ liệu...</p>
+            </div>
+        </div>
+
+        <div id="errorSection" class="card hidden">
+            <div class="error" id="errorMessage"></div>
+        </div>
+
+        <div id="resultSection" class="card hidden">
+            <div class="result-header">
+                <h2>📊 Kết quả tra cứu</h2>
+                <span class="price-tag" id="priceTag"></span>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>Ngày</label>
+                    <span id="resultDate">-</span>
+                </div>
+                <div class="info-item">
+                    <label>Thương hiệu</label>
+                    <span id="resultBrand">-</span>
+                </div>
+                <div class="info-item">
+                    <label>Loại nhiên liệu</label>
+                    <span id="resultTitle">-</span>
+                </div>
+                <div class="info-item">
+                    <label>Giá vùng 1</label>
+                    <span id="resultZone1">-</span>
+                </div>
+                <div class="info-item">
+                    <label>Giá vùng 2</label>
+                    <span id="resultZone2">-</span>
+                </div>
+            </div>
+
+            <div class="surcharge-section">
+                <h3>📦 Phụ thu Container Hàng</h3>
+                <div class="surcharge-grid">
+                    <div class="surcharge-item hang">
+                        <div class="size">20' (AMT_F20)</div>
+                        <div class="value" id="hang20">-</div>
+                    </div>
+                    <div class="surcharge-item hang">
+                        <div class="size">40' (AMT_F40)</div>
+                        <div class="value" id="hang40">-</div>
+                    </div>
+                    <div class="surcharge-item hang">
+                        <div class="size">45' (AMT_F45)</div>
+                        <div class="value" id="hang45">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="surcharge-section" style="margin-top: 25px;">
+                <h3>📦 Phụ thu Container Rỗng</h3>
+                <div class="surcharge-grid">
+                    <div class="surcharge-item rong">
+                        <div class="size">20' (AMT_E20)</div>
+                        <div class="value" id="rong20">-</div>
+                    </div>
+                    <div class="surcharge-item rong">
+                        <div class="size">40' (AMT_E40)</div>
+                        <div class="value" id="rong40">-</div>
+                    </div>
+                    <div class="surcharge-item rong">
+                        <div class="size">45' (AMT_E45)</div>
+                        <div class="value" id="rong45">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api/get_fuel_price';
+        const API_BASE = 'http://localhost:8000/api';
+
+        // Check authentication on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                // No token, redirect to login
+                window.location.href = '/login';
+                return;
+            }
+
+            // Verify token is valid
+            try {
+                const response = await fetch(`${API_BASE}/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    // Token invalid, clear and redirect
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    window.location.href = '/login';
+                    return;
+                }
+
+                // Token valid, continue loading page
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('dateInput').value = today;
+
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                window.location.href = '/login';
+            }
+        });
+
+        function formatCurrency(value) {
+            if (value === null || value === undefined) return '-';
+            return new Intl.NumberFormat('vi-VN').format(value) + ' đ';
+        }
+
+        function showSection(sectionId) {
+            ['loadingSection', 'errorSection', 'resultSection'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            if (sectionId) {
+                document.getElementById(sectionId).classList.remove('hidden');
+            }
+        }
+
+        async function fetchFuelPrice() {
+            const dateInput = document.getElementById('dateInput');
+            const fetchBtn = document.getElementById('fetchBtn');
+            const date = dateInput.value;
+
+            if (!date) {
+                alert('Vui lòng chọn ngày!');
+                return;
+            }
+
+            // Show loading
+            showSection('loadingSection');
+            fetchBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_URL}?date=${date}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Update UI with data
+                document.getElementById('resultDate').textContent = data.date || '-';
+                document.getElementById('resultBrand').textContent = data.brand || '-';
+                document.getElementById('resultTitle').textContent = data.title || '-';
+                document.getElementById('resultZone1').textContent = formatCurrency(data.zone1_price);
+                document.getElementById('resultZone2').textContent = formatCurrency(data.zone2_price);
+                document.getElementById('priceTag').textContent = formatCurrency(data.zone1_price);
+
+                document.getElementById('hang20').textContent = formatCurrency(data.hang_20);
+                document.getElementById('hang40').textContent = formatCurrency(data.hang_40);
+                document.getElementById('hang45').textContent = formatCurrency(data.hang_45);
+
+                document.getElementById('rong20').textContent = formatCurrency(data.rong_20);
+                document.getElementById('rong40').textContent = formatCurrency(data.rong_40);
+                document.getElementById('rong45').textContent = formatCurrency(data.rong_45);
+
+                showSection('resultSection');
+
+            } catch (error) {
+                console.error('Error fetching fuel price:', error);
+                document.getElementById('errorMessage').textContent = 
+                    `Lỗi: ${error.message}. Vui lòng kiểm tra kết nối server.`;
+                showSection('errorSection');
+            } finally {
+                fetchBtn.disabled = false;
+            }
+        }
+
+        // Allow Enter key to trigger search
+        document.getElementById('dateInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                fetchFuelPrice();
+            }
+        });
+    </script>
+</body>
+</html>
