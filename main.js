@@ -1,8 +1,9 @@
 // Import necessary modules
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const sql = require('mssql');
+const ms_sql = require('mssql');
 const axios = require("axios");
 const sqlite3 = require('sqlite3').verbose();
 const crypto = require('crypto');
@@ -24,6 +25,9 @@ const SQLITE_DB_PATH = './database/fuel_data.db';
 app.use(cors());
 app.use(bodyParser.json());
 
+// config public folder to serve static files (html, css, js)
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Database configuration
 const dbConfig = {
     user: 'sa',
@@ -36,12 +40,12 @@ const dbConfig = {
     }
 };
 
-// Connect to the database
-sql.connect(dbConfig).then(pool => {
-    if (pool.connected) console.log('Connected to SQL Server -', dbConfig.server);
-    else console.log('Failed to connect to SQL Server')
+// check Connect to the database
+ms_sql.connect(dbConfig).then(pool => {
+    if (pool.connected) console.log('> LOG: Connected to SQL Server -', dbConfig.server);
+    else console.log('> LOG: Failed to connect to SQL Server -', dbConfig.server);
 }).catch(err => {
-    console.error('Database connection failed:', err);
+    console.error('> ERROR: Database connection failed: ', err.message);
 });
 
 // sql SELECT lấy biểu cước hiện tại trong bảng TRF_STD cho 4 loại cước: NH, HH, NR, HR
@@ -85,14 +89,14 @@ WHERE rowguid = 'e4f41ae6-9fc4-4ae4-97ae-ef9c0624cd19' `;
 // --------------------------------------------------------------------
 
 // database sqlite configuration
-const db = new sqlite3.Database(SQLITE_DB_PATH, (err) => {
-    if (err) console.error('Could not connect to SQLite database:', err);
-    else console.log('Connected to SQLite database');
+const sqlite_db = new sqlite3.Database(SQLITE_DB_PATH, (err) => {
+    if (err) console.error('> ERROR: Could not connect to SQLite database:', err.message);
+    else console.log('> LOG: Connected to SQLite database -' + SQLITE_DB_PATH);
 });
 
 // Create fuel_prices table if it doesn't exist
-// db.serialize(() => {
-//     db.run(`CREATE TABLE IF NOT EXISTS fuel_prices (
+// sqlite_db.serialize(() => {
+//     sqlite_db.run(`CREATE TABLE IF NOT EXISTS fuel_prices (
 //         id INTEGER PRIMARY KEY AUTOINCREMENT,
 //         date TEXT,
 //         brand TEXT,
@@ -205,7 +209,7 @@ async function maintest() {
         */
 
         // connect to the database using the dbConfig
-        let pool = await sql.connect(dbConfig);
+        let pool = await ms_sql.connect(dbConfig);
         // let result_SELECT_TRF_STD = (await pool.request().query(SELECT_TRF_STD)).recordset;
         // console.log('result_SELECT_TRF_STD :>> ', result_SELECT_TRF_STD);
 
@@ -255,9 +259,12 @@ async function maintest() {
         */
 
         // lưu kết quả tính cước phụ thu vào database sqlite với các trường: date, brand, title, zone1_price, zone2_price (nếu có), hang_20, hang_40, hang_45, rong_20, rong_40, rong_45 , status , createdAt
-        const stmt = db.prepare(`INSERT INTO fuel_prices 
+        const stmt = sqlite_db.prepare(`
+            INSERT INTO fuel_prices 
             (date, brand, title, zone1_price, zone2_price, hang_20, hang_40, hang_45, rong_20, rong_40, rong_45, status, createdAt) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+
         stmt.run(
             date,
             "petrolimex",
@@ -273,91 +280,15 @@ async function maintest() {
             'active',
             new Date().toISOString()
         );
+
         stmt.finalize();
 
     } catch (err) {
-        console.error('Error in maintest:', err);
+        console.error('> ERROR : Error in maintest - ', err);
     }
 };
 
 // maintest();
-
-// Define a simple route
-app.get('/', (req, res) => {
-    // tạo giao diện đơn giản để hiển thị thông tin về dịch vụ tính cước phụ thu nhiên liệu DO của MPC
-    // res từ index.html trong thư mục public
-    res.sendFile(__dirname + '/public/index.html');
-    // res.send('service for MPC fuel price and surcharge calculation');
-});
-
-// Route đăng nhập
-app.get('/login', (req, res) => {
-    res.sendFile(__dirname + '/public/login.html');
-});
-
-// ví dụ : localhost:3000/api/get_fuel_price?date=2026-03-25 
-app.get('/api/get_fuel_price', async (req, res) => {
-    try {
-        let date = req.query.date || new Date().toISOString().split('T')[0]; // Get date from query or use today's date
-
-        console.log('date_in :>> ', date);
-
-        // lấy dữ liệu giá nhiên liệu DO 0,05S-II của Petrolimex từ API https://giaxanghomnay.com/api/pvdate/{date} với date là ngày hiện tại
-
-        // let date = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
-        const apiData = await getFuelByDate(date);
-        const result = getFuelByTitle(apiData, "petrolimex", "DO 0,05S-II");
-        const giaDauDO = result.zone1_price || 0; // Use actual DO price from Petrolimex data or default to 0
-
-        // tính cước phụ thu theo bảng phụ thu đã cho ở trên với giá nhiên liệu DO 0,05S-II lấy được từ API và loại container là "hang_20", "hang_40", "hang_45" ,  "rong_20", "rong_40", "rong_45" 
-
-        const hang_20 = tinhGiaCuocTheoDauDO(giaDauDO, "hang_20", 0);
-        const hang_40 = tinhGiaCuocTheoDauDO(giaDauDO, "hang_40", 0);
-        const hang_45 = tinhGiaCuocTheoDauDO(giaDauDO, "hang_45", 0);
-
-        const rong_20 = tinhGiaCuocTheoDauDO(giaDauDO, "rong_20", 0);
-        const rong_40 = tinhGiaCuocTheoDauDO(giaDauDO, "rong_40", 0);
-        const rong_45 = tinhGiaCuocTheoDauDO(giaDauDO, "rong_45", 0);
-
-        // lưu kết quả tính cước phụ thu vào database sqlite với các trường: date, brand, title, zone1_price, zone2_price (nếu có), hang_20, hang_40, hang_45, rong_20, rong_40, rong_45 , status , createdAt
-        const stmt = db.prepare(`INSERT INTO fuel_prices 
-            (date, brand, title, zone1_price, zone2_price, hang_20, hang_40, hang_45, rong_20, rong_40, rong_45, status, createdAt) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-        stmt.run(
-            date,
-            "petrolimex",
-            "DO 0,05S-II",
-            result.zone1_price,
-            result.zone2_price,
-            hang_20.phuThu,
-            hang_40.phuThu,
-            hang_45.phuThu,
-            rong_20.phuThu,
-            rong_40.phuThu,
-            rong_45.phuThu,
-            'active',
-            new Date().toISOString()
-        );
-        stmt.finalize();
-
-        res.json({
-            date,
-            brand: "petrolimex",
-            title: "DO 0,05S-II",
-            zone1_price: result.zone1_price,
-            zone2_price: result.zone2_price,
-            hang_20: hang_20.phuThu,
-            hang_40: hang_40.phuThu,
-            hang_45: hang_45.phuThu,
-            rong_20: rong_20.phuThu,
-            rong_40: rong_40.phuThu,
-            rong_45: rong_45.phuThu 
-        });
-    } catch (err) {
-        console.error('Error fetching fuel price:', err);
-        res.status(500).json({ error: 'Failed to fetch fuel price' });
-    }
-});
 
 // ============================================================================
 // AUTH API - Login, Register, Users
@@ -413,14 +344,93 @@ function adminMiddleware(req, res, next) {
     next();
 }
 
+// ============================================================================
+
+// Define a simple route
+app.get('/', authMiddleware, (req, res) => {
+    // tạo giao diện đơn giản để hiển thị thông tin về dịch vụ tính cước phụ thu nhiên liệu DO của MPC
+    // res từ index.html trong thư mục view
+    res.sendFile(__dirname + '/view/index.html');
+    // res.send('service for MPC fuel price and surcharge calculation');
+});
+
+// Route đăng nhập
+app.get('/login', (req, res) => {
+    res.sendFile(__dirname + '/view/login.html');
+});
+
+// ví dụ : localhost:3000/api/get_fuel_price?date=2026-03-25 
+app.get('/api/get_fuel_price', async (req, res) => {
+    try {
+        let date = req.query.date || new Date().toISOString().split('T')[0]; // Get date from query or use today's date
+
+        console.log('date_in :>> ', date);
+
+        // lấy dữ liệu giá nhiên liệu DO 0,05S-II của Petrolimex từ API https://giaxanghomnay.com/api/pvdate/{date} với date là ngày hiện tại
+
+        // let date = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+        const apiData = await getFuelByDate(date);
+        const result = getFuelByTitle(apiData, "petrolimex", "DO 0,05S-II");
+        const giaDauDO = result.zone1_price || 0; // Use actual DO price from Petrolimex data or default to 0
+
+        // tính cước phụ thu theo bảng phụ thu đã cho ở trên với giá nhiên liệu DO 0,05S-II lấy được từ API và loại container là "hang_20", "hang_40", "hang_45" ,  "rong_20", "rong_40", "rong_45" 
+
+        const hang_20 = tinhGiaCuocTheoDauDO(giaDauDO, "hang_20", 0);
+        const hang_40 = tinhGiaCuocTheoDauDO(giaDauDO, "hang_40", 0);
+        const hang_45 = tinhGiaCuocTheoDauDO(giaDauDO, "hang_45", 0);
+
+        const rong_20 = tinhGiaCuocTheoDauDO(giaDauDO, "rong_20", 0);
+        const rong_40 = tinhGiaCuocTheoDauDO(giaDauDO, "rong_40", 0);
+        const rong_45 = tinhGiaCuocTheoDauDO(giaDauDO, "rong_45", 0);
+
+        // lưu kết quả tính cước phụ thu vào database sqlite với các trường: date, brand, title, zone1_price, zone2_price (nếu có), hang_20, hang_40, hang_45, rong_20, rong_40, rong_45 , status , createdAt
+        const stmt = sqlite_db.prepare(`INSERT INTO fuel_prices 
+            (date, brand, title, zone1_price, zone2_price, hang_20, hang_40, hang_45, rong_20, rong_40, rong_45, status, createdAt) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+        stmt.run(
+            date,
+            "petrolimex",
+            "DO 0,05S-II",
+            result.zone1_price,
+            result.zone2_price,
+            hang_20.phuThu,
+            hang_40.phuThu,
+            hang_45.phuThu,
+            rong_20.phuThu,
+            rong_40.phuThu,
+            rong_45.phuThu,
+            'active',
+            new Date().toISOString()
+        );
+        stmt.finalize();
+
+        res.json({
+            date,
+            brand: "petrolimex",
+            title: "DO 0,05S-II",
+            zone1_price: result.zone1_price,
+            zone2_price: result.zone2_price,
+            hang_20: hang_20.phuThu,
+            hang_40: hang_40.phuThu,
+            hang_45: hang_45.phuThu,
+            rong_20: rong_20.phuThu,
+            rong_40: rong_40.phuThu,
+            rong_45: rong_45.phuThu
+        });
+    } catch (err) {
+        console.error('Error fetching fuel price:', err);
+        res.status(500).json({ error: 'Failed to fetch fuel price' });
+    }
+});
+
 // POST /api/login - Đăng nhập
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'Vui lòng nhập username và password' 
+        return res.status(400).json({
+            success: false,
+            message: 'Vui lòng nhập username và password'
         });
     }
 
@@ -428,19 +438,19 @@ app.post('/api/login', (req, res) => {
                    FROM users 
                    WHERE username = ? AND password = ? AND status = 'active'`;
 
-    db.get(query, [username, password], (err, user) => {
+    sqlite_db.get(query, [username, password], (err, user) => {
         if (err) {
             console.error('Login error:', err);
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Lỗi server' 
+            return res.status(500).json({
+                success: false,
+                message: 'Lỗi server'
             });
         }
 
         if (!user) {
-            return res.status(401).json({ 
-                success: false, 
-                message: 'Username hoặc password không đúng' 
+            return res.status(401).json({
+                success: false,
+                message: 'Username hoặc password không đúng'
             });
         }
 
@@ -461,7 +471,7 @@ app.post('/api/login', (req, res) => {
         });
 
         // Update last_login
-        db.run(`UPDATE users SET last_login = ? WHERE id = ?`, 
+        sqlite_db.run(`UPDATE users SET last_login = ? WHERE id = ?`,
             [new Date().toISOString(), user.id]);
 
         res.json({
@@ -502,26 +512,26 @@ app.post('/api/register', (req, res) => {
     const { username, password, email, full_name } = req.body;
 
     if (!username || !password) {
-        return res.status(400).json({ 
-            success: false, 
-            message: 'Vui lòng nhập username và password' 
+        return res.status(400).json({
+            success: false,
+            message: 'Vui lòng nhập username và password'
         });
     }
 
     // Check if username exists
-    db.get(`SELECT id FROM users WHERE username = ?`, [username], (err, existing) => {
+    sqlite_db.get(`SELECT id FROM users WHERE username = ?`, [username], (err, existing) => {
         if (err) {
             console.error('Register error:', err);
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Lỗi server' 
+            return res.status(500).json({
+                success: false,
+                message: 'Lỗi server'
             });
         }
 
         if (existing) {
-            return res.status(409).json({ 
-                success: false, 
-                message: 'Username đã tồn tại' 
+            return res.status(409).json({
+                success: false,
+                message: 'Username đã tồn tại'
             });
         }
 
@@ -530,12 +540,12 @@ app.post('/api/register', (req, res) => {
                        VALUES (?, ?, ?, ?, 'user', 'active', ?, ?)`;
         const now = new Date().toISOString();
 
-        db.run(query, [username, password, email || null, full_name || null, now, now], function(err) {
+        sqlite_db.run(query, [username, password, email || null, full_name || null, now, now], function (err) {
             if (err) {
                 console.error('Register insert error:', err);
-                return res.status(500).json({ 
-                    success: false, 
-                    message: 'Lỗi khi tạo tài khoản' 
+                return res.status(500).json({
+                    success: false,
+                    message: 'Lỗi khi tạo tài khoản'
                 });
             }
 
@@ -560,12 +570,12 @@ app.get('/api/users', authMiddleware, adminMiddleware, (req, res) => {
                    FROM users 
                    ORDER BY created_at DESC`;
 
-    db.all(query, [], (err, users) => {
+    sqlite_db.all(query, [], (err, users) => {
         if (err) {
             console.error('Get users error:', err);
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Lỗi server' 
+            return res.status(500).json({
+                success: false,
+                message: 'Lỗi server'
             });
         }
 
@@ -585,19 +595,19 @@ app.get('/api/users/:id', authMiddleware, (req, res) => {
                    FROM users 
                    WHERE id = ?`;
 
-    db.get(query, [id], (err, user) => {
+    sqlite_db.get(query, [id], (err, user) => {
         if (err) {
             console.error('Get user error:', err);
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Lỗi server' 
+            return res.status(500).json({
+                success: false,
+                message: 'Lỗi server'
             });
         }
 
         if (!user) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Không tìm thấy user' 
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy user'
             });
         }
 
@@ -621,19 +631,19 @@ app.put('/api/users/:id', authMiddleware, (req, res) => {
                        updated_at = ?
                    WHERE id = ?`;
 
-    db.run(query, [email, full_name, role, status, new Date().toISOString(), id], function(err) {
+    sqlite_db.run(query, [email, full_name, role, status, new Date().toISOString(), id], function (err) {
         if (err) {
             console.error('Update user error:', err);
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Lỗi server' 
+            return res.status(500).json({
+                success: false,
+                message: 'Lỗi server'
             });
         }
 
         if (this.changes === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Không tìm thấy user' 
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy user'
             });
         }
 
@@ -648,19 +658,19 @@ app.put('/api/users/:id', authMiddleware, (req, res) => {
 app.delete('/api/users/:id', authMiddleware, adminMiddleware, (req, res) => {
     const { id } = req.params;
 
-    db.run(`DELETE FROM users WHERE id = ?`, [id], function(err) {
+    sqlite_db.run(`DELETE FROM users WHERE id = ?`, [id], function (err) {
         if (err) {
             console.error('Delete user error:', err);
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Lỗi server' 
+            return res.status(500).json({
+                success: false,
+                message: 'Lỗi server'
             });
         }
 
         if (this.changes === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Không tìm thấy user' 
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy user'
             });
         }
 

@@ -193,7 +193,7 @@
 <body>
     <div class="login-container">
         <div class="login-header">
-            <div class="icon">🛢️</div>
+            <div class="icon"> <img src="/logo.png" alt="logo"> </div>
             <h1>MPC Fuel Service</h1>
             <p>Đăng nhập để tiếp tục</p>
         </div>
@@ -226,8 +226,8 @@
             </div>
 
             <div class="remember-me">
-                <input type="checkbox" id="remember" name="remember">
-                <label for="remember">Ghi nhớ đăng nhập</label>
+                <input hidden type="checkbox" id="remember" name="remember">
+                <label hidden for="remember">Ghi nhớ đăng nhập</label>
             </div>
 
             <button type="submit" class="btn-login" id="btnLogin">
@@ -236,7 +236,7 @@
         </form>
 
         <div class="login-footer">
-            <p>Chưa có tài khoản? <a href="/register">Đăng ký ngay</a></p>
+            <!-- <p>Chưa có tài khoản? <a href="/register">Đăng ký ngay</a></p> -->
         </div>
     </div>
 
@@ -331,12 +331,15 @@
                     setTimeout(() => {
                         window.location.href = '/';
                     }, 1000);
+
                 } else {
                     showMessage(data.message || 'Đăng nhập thất bại!', 'error');
                 }
+
             } catch (error) {
                 console.error('Login error:', error);
                 showMessage('Lỗi kết nối server. Vui lòng thử lại!', 'error');
+
             } finally {
                 btnLogin.disabled = false;
                 btnLogin.innerHTML = 'Đăng nhập';
@@ -351,6 +354,7 @@
                 }
             });
         });
+        
     </script>
 </body>
 </html>
