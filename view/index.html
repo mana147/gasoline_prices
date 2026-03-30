@@ -626,6 +626,294 @@
                 font-size: 1.5rem;
             }
         }
+
+        /* ============================================================================
+           iPhone X Responsive (375 x 812) and similar mobile devices
+           ============================================================================ */
+        @media (max-width: 414px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                max-width: 100%;
+            }
+
+            .card {
+                padding: 15px;
+                margin-bottom: 15px;
+                border-radius: 10px;
+            }
+
+            /* Form group - stack vertically */
+            .form-group {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+
+            .form-group > div {
+                width: 100%;
+            }
+
+            .form-group input[type="date"] {
+                width: 100%;
+                padding: 10px 12px;
+                font-size: 14px;
+            }
+
+            .btn {
+                width: 100%;
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+
+            /* Result header */
+            .result-header {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+
+            .result-header h2 {
+                font-size: 1.1rem;
+            }
+
+            .price-tag {
+                padding: 6px 15px;
+                font-size: 14px;
+                align-self: flex-start;
+            }
+
+            /* Info grid */
+            .info-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .info-item {
+                padding: 10px;
+            }
+
+            .info-item label {
+                font-size: 10px;
+            }
+
+            .info-item span {
+                font-size: 14px;
+            }
+
+            /* Surcharge grid - 3 columns compact */
+            .surcharge-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+
+            .surcharge-item {
+                padding: 12px 8px;
+                border-radius: 8px;
+            }
+
+            .surcharge-item .size {
+                font-size: 10px;
+                margin-bottom: 3px;
+            }
+
+            .surcharge-item .value {
+                font-size: 13px;
+            }
+
+            .surcharge-section h3 {
+                font-size: 14px;
+                margin-bottom: 10px;
+            }
+
+            /* TRF_STD Section */
+            .trf-std-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .trf-std-card-header {
+                padding: 10px;
+                font-size: 13px;
+            }
+
+            .trf-std-card-body {
+                padding: 12px;
+            }
+
+            .trf-std-row {
+                padding: 6px 0;
+            }
+
+            .trf-std-row .label {
+                font-size: 12px;
+            }
+
+            .trf-std-row .value {
+                font-size: 13px;
+            }
+
+            .refresh-btn {
+                padding: 6px 12px;
+                font-size: 11px;
+            }
+
+            /* Update TRF_STD Form */
+            .update-form-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .update-form-header {
+                padding: 10px;
+                font-size: 12px;
+            }
+
+            .update-form-body {
+                padding: 12px;
+            }
+
+            .update-input-group {
+                margin-bottom: 10px;
+            }
+
+            .update-input-group label {
+                font-size: 11px;
+            }
+
+            .update-input-group input {
+                padding: 8px 10px;
+                font-size: 13px;
+            }
+
+            .update-btn-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .update-btn {
+                padding: 10px;
+                font-size: 12px;
+            }
+
+            .copy-from-result-btn {
+                padding: 8px 12px;
+                font-size: 10px;
+                margin-left: 0;
+                margin-top: 8px;
+                display: block;
+                width: 100%;
+                text-align: center;
+            }
+
+            /* Surcharge Table */
+            .surcharge-table {
+                font-size: 9px;
+            }
+
+            .surcharge-table th,
+            .surcharge-table td {
+                padding: 5px 3px;
+            }
+
+            .toggle-table-btn {
+                padding: 8px 15px;
+                font-size: 12px;
+                width: 100%;
+            }
+
+            /* Loading */
+            .loading .spinner {
+                width: 30px;
+                height: 30px;
+            }
+
+            .loading p {
+                font-size: 13px;
+            }
+
+            /* Header logo */
+            .header .icon img {
+                max-width: 150px;
+                height: auto;
+            }
+
+            /* Section titles */
+            .form-group h4 {
+                font-size: 13px;
+                margin-bottom: 5px;
+            }
+
+            .surcharge-table-section h4,
+            .trf-std-section h4,
+            .update-trf-section h4 {
+                font-size: 13px;
+            }
+        }
+
+        /* Extra small phones (< 360px) */
+        @media (max-width: 360px) {
+            body {
+                padding: 8px;
+            }
+
+            .card {
+                padding: 12px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .surcharge-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 5px;
+            }
+
+            .surcharge-item {
+                padding: 10px 5px;
+            }
+
+            .surcharge-item .size {
+                font-size: 9px;
+            }
+
+            .surcharge-item .value {
+                font-size: 11px;
+            }
+
+            .surcharge-table {
+                font-size: 8px;
+            }
+
+            .surcharge-table th,
+            .surcharge-table td {
+                padding: 4px 2px;
+            }
+        }
+
+        /* Landscape mode for iPhone X */
+        @media (max-height: 450px) and (orientation: landscape) {
+            body {
+                padding: 10px;
+            }
+
+            .card {
+                padding: 12px;
+                margin-bottom: 10px;
+            }
+
+            .surcharge-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .trf-std-grid,
+            .update-form-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
     </style>
 </head>
 
