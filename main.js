@@ -302,6 +302,7 @@ function generateToken() {
 // Middleware xác thực token
 function authMiddleware(req, res, next) {
     const authHeader = req.headers['authorization'];
+    console.log('authHeader :>> ', authHeader);
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
     if (!token) {
@@ -347,7 +348,7 @@ function adminMiddleware(req, res, next) {
 // ============================================================================
 
 // Define a simple route
-app.get('/', authMiddleware, (req, res) => {
+app.get('/' , (req, res) => {
     // tạo giao diện đơn giản để hiển thị thông tin về dịch vụ tính cước phụ thu nhiên liệu DO của MPC
     // res từ index.html trong thư mục view
     res.sendFile(__dirname + '/view/index.html');
@@ -360,7 +361,7 @@ app.get('/login', (req, res) => {
 });
 
 // ví dụ : localhost:3000/api/get_fuel_price?date=2026-03-25 
-app.get('/api/get_fuel_price', async (req, res) => {
+app.get('/api/get_fuel_price' , authMiddleware, async (req, res) => {
     try {
         let date = req.query.date || new Date().toISOString().split('T')[0]; // Get date from query or use today's date
 

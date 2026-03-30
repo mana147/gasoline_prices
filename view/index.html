@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,45 +11,54 @@
             margin: 0;
             padding: 0;
         }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
+
         .container {
             max-width: 900px;
             margin: 0 auto;
         }
+
         .header {
             text-align: center;
             color: white;
             margin-bottom: 30px;
         }
+
         .header h1 {
             font-size: 2rem;
             margin-bottom: 10px;
         }
+
         .header p {
             opacity: 0.9;
         }
+
         .card {
             background: white;
             border-radius: 12px;
             padding: 25px;
             margin-bottom: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
         }
+
         .form-group {
             display: flex;
             gap: 15px;
             align-items: center;
             flex-wrap: wrap;
         }
+
         .form-group label {
             font-weight: 600;
             color: #333;
         }
+
         .form-group input[type="date"] {
             padding: 12px 15px;
             border: 2px solid #e0e0e0;
@@ -56,10 +66,12 @@
             font-size: 16px;
             transition: border-color 0.3s;
         }
+
         .form-group input[type="date"]:focus {
             outline: none;
             border-color: #667eea;
         }
+
         .btn {
             padding: 12px 30px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -70,15 +82,18 @@
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
         }
+
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
         }
+
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
         }
+
         .result-header {
             display: flex;
             justify-content: space-between;
@@ -87,10 +102,12 @@
             padding-bottom: 15px;
             border-bottom: 2px solid #f0f0f0;
         }
+
         .result-header h2 {
             color: #333;
             font-size: 1.3rem;
         }
+
         .price-tag {
             background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
             color: white;
@@ -98,17 +115,20 @@
             border-radius: 20px;
             font-weight: 600;
         }
+
         .info-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
             margin-bottom: 25px;
         }
+
         .info-item {
             background: #f8f9fa;
             padding: 15px;
             border-radius: 8px;
         }
+
         .info-item label {
             display: block;
             font-size: 12px;
@@ -116,53 +136,64 @@
             margin-bottom: 5px;
             text-transform: uppercase;
         }
+
         .info-item span {
             font-size: 18px;
             font-weight: 600;
             color: #333;
         }
+
         .surcharge-section h3 {
             color: #333;
             margin-bottom: 15px;
             padding-bottom: 10px;
             border-bottom: 1px solid #e0e0e0;
         }
+
         .surcharge-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 15px;
         }
+
         .surcharge-item {
             text-align: center;
             padding: 20px;
             border-radius: 10px;
             transition: transform 0.2s;
         }
+
         .surcharge-item:hover {
             transform: translateY(-3px);
         }
+
         .surcharge-item.hang {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
+
         .surcharge-item.rong {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             color: white;
         }
+
         .surcharge-item .size {
             font-size: 14px;
             opacity: 0.9;
             margin-bottom: 5px;
         }
+
         .surcharge-item .value {
             font-size: 24px;
             font-weight: 700;
         }
+
         .loading {
             text-align: center;
             padding: 40px;
             color: #666;
         }
+
         .loading .spinner {
             width: 40px;
             height: 40px;
@@ -172,9 +203,13 @@
             animation: spin 1s linear infinite;
             margin: 0 auto 15px;
         }
+
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
+
         .error {
             background: #fee;
             color: #c00;
@@ -182,24 +217,27 @@
             border-radius: 8px;
             text-align: center;
         }
+
         .hidden {
             display: none;
         }
+
         @media (max-width: 600px) {
             .surcharge-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
+
             .header h1 {
                 font-size: 1.5rem;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
             <div class="icon"> <img src="/logo.png" alt="logo"> </div>
-            <p>Dịch vụ tính cước phụ thu nhiên liệu DO - Petrolimex</p>
         </div>
 
         <div class="card">
@@ -294,10 +332,27 @@
         const API_URL = 'http://localhost:8000/api/get_fuel_price';
         const API_BASE = 'http://localhost:8000/api';
 
+
+        /**
+         * @file index.html
+         * @description 
+         * Đoạn mã này được thực thi khi sự kiện 'DOMContentLoaded' xảy ra (tức là ngay sau khi trình duyệt đã tải và phân tích xong cấu trúc HTML của trang, trước khi tải xong toàn bộ tài nguyên như ảnh hay CSS).
+         *
+         * Quy trình xử lý:
+         * 1. Kiểm tra sự hiện diện của JWT 'token' trong localStorage.
+         * 2. Nếu không có token: Điều hướng người dùng về trang '/login'.
+         * 3. Nếu có token: Gửi yêu cầu xác thực đến API endpoint `${API_BASE}/me` để kiểm tra tính hợp lệ của token.
+         *    - Nếu Token không hợp lệ (Response !ok): Xóa 'token', 'user' khỏi localStorage và điều hướng về '/login'.
+         *    - Nếu Token hợp lệ: Khởi tạo giá trị mặc định cho phần tử có ID 'dateInput' là ngày hiện tại (định dạng YYYY-MM-DD).
+         * 4. Xử lý lỗi (Catch block): Nếu quá trình fetch gặp lỗi (lỗi mạng...), thực hiện điều hướng về trang '/login'.
+         */
+
+
         // Check authentication on page load
-        document.addEventListener('DOMContentLoaded', async function() {
+        document.addEventListener('DOMContentLoaded', async function () {
             const token = localStorage.getItem('token');
-            
+            console.log('token :>> ', token);
+
             if (!token) {
                 // No token, redirect to login
                 window.location.href = '/login';
@@ -306,12 +361,12 @@
 
             // Verify token is valid
             try {
-                const response = await fetch(`${API_BASE}/me`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+                const response = await fetch(
+                    `${API_BASE}/me`,
+                    { headers: { 'Authorization': `Bearer ${token}` } }
+                );
 
+                // nếu token không hợp lệ, API sẽ trả về 401 hoặc 403 => response.ok sẽ là false
                 if (!response.ok) {
                     // Token invalid, clear and redirect
                     localStorage.removeItem('token');
@@ -359,8 +414,12 @@
             fetchBtn.disabled = true;
 
             try {
-                const response = await fetch(`${API_URL}?date=${date}`);
-                
+                const response = await fetch(
+                    `${API_URL}?date=${date}`,
+                    { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }
+                );
+
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -387,7 +446,7 @@
 
             } catch (error) {
                 console.error('Error fetching fuel price:', error);
-                document.getElementById('errorMessage').textContent = 
+                document.getElementById('errorMessage').textContent =
                     `Lỗi: ${error.message}. Vui lòng kiểm tra kết nối server.`;
                 showSection('errorSection');
             } finally {
@@ -396,11 +455,13 @@
         }
 
         // Allow Enter key to trigger search
-        document.getElementById('dateInput').addEventListener('keypress', function(e) {
+        document.getElementById('dateInput').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 fetchFuelPrice();
             }
         });
+
     </script>
 </body>
+
 </html>
