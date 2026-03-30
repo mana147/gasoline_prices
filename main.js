@@ -9,15 +9,18 @@ const sqlite3 = require('sqlite3').verbose();
 const crypto = require('crypto');
 const { tinhGiaCuocTheoDauDO , bangPhuThu } = require('./calculator_gasoline');
 
+// Load environment variables from .env file
+require('dotenv').config();
+
 // Token storage (in-memory - use Redis for production)
 const activeTokens = new Map();
 
 // Initialize the app
 const app = express();
 const PORT = process.env.PORT || 8000;
-const API_BASE_URL = 'https://giaxanghomnay.com/api/pvdate/';
-const API_TIMEOUT = 10000; // 10 seconds
-const SQLITE_DB_PATH = './database/fuel_data.db';
+const API_BASE_URL = process.env.API_BASE_URL || 'https://giaxanghomnay.com/api/pvdate/';
+const API_TIMEOUT = parseInt(process.env.API_TIMEOUT) || 10000; // 10 seconds
+const SQLITE_DB_PATH = process.env.SQLITE_DB_PATH || './database/fuel_data.db';
 
 // --------------------------------------------------------------------
 
@@ -30,13 +33,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Database configuration
 const dbConfig = {
-    user: 'sa',
-    password: 'adminlocal@123',
-    server: '172.16.10.8\\MPC',
-    database: 'PRD_MPC',
+    user: process.env.MSSQL_USER,
+    password: process.env.MSSQL_PASSWORD,
+    server: process.env.MSSQL_SERVER,
+    database: process.env.MSSQL_DATABASE,
     options: {
-        encrypt: false,                     // Use encryption
-        trustServerCertificate: true        // Change to false for production
+        encrypt: process.env.MSSQL_ENCRYPT === 'true',
+        trustServerCertificate: process.env.MSSQL_TRUST_SERVER_CERTIFICATE === 'true'
     }
 };
 
