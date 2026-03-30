@@ -94,26 +94,6 @@ const sqlite_db = new sqlite3.Database(SQLITE_DB_PATH, (err) => {
     else console.log('> LOG: Connected to SQLite database -' + SQLITE_DB_PATH);
 });
 
-// Create fuel_prices table if it doesn't exist
-// sqlite_db.serialize(() => {
-//     sqlite_db.run(`CREATE TABLE IF NOT EXISTS fuel_prices (
-//         id INTEGER PRIMARY KEY AUTOINCREMENT,
-//         date TEXT,
-//         brand TEXT,
-//         title TEXT,
-//         zone1_price REAL,
-//         zone2_price REAL,
-//         hang_20 REAL,
-//         hang_40 REAL,
-//         hang_45 REAL,
-//         rong_20 REAL,
-//         rong_40 REAL,
-//         rong_45 REAL,
-//         status TEXT DEFAULT 'active',
-//         createdAt TEXT
-//     )`);
-// });
-
 // --------------------------------------------------------------------
 
 // Function to get fuel data by date from the API https://giaxanghomnay.com/api/pvdate/{date}
@@ -436,7 +416,7 @@ app.get('/api/get_fuel_price', authMiddleware, async (req, res) => {
 
 
 // api lấy dữ liêu trong bảng TRF_STD của SQL Server với 4 loại cước: NH, HH, NR, HR và in ra console
-app.get('/api/get_trf_std', async (req, res) => {
+app.get('/api/get_trf_std', authMiddleware , async (req, res) => {
     try {
         let pool = await ms_sql.connect(dbConfig);
         let result_SELECT_TRF_STD = (await pool.request().query(SELECT_TRF_STD)).recordset;
@@ -461,6 +441,101 @@ app.get('/api/get_trf_std', async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch TRF_STD data' });
     }
 });
+
+// api update lại giá cước NH, HH, NR, HR trong bảng TRF_STD 
+// api update bằng POST với body có các trường: trf_code, hang_20, hang_40, hang_45, rong_20, rong_40, rong_45
+
+app.post('/api/update_trf_std', authMiddleware, adminMiddleware, async (req, res) => { 
+    try {
+        const { trf_code, hang_20, hang_40, hang_45, rong_20, rong_40, rong_45 } = req.body;
+
+        // Validate trf_code
+        const validCodes = ['NH', 'HH', 'NR', 'HR'];
+        if (!trf_code || !validCodes.includes(trf_code)) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Invalid trf_code. Must be one of: NH, HH, NR, HR' 
+            });
+        }
+
+        let pool = await ms_sql.connect(dbConfig);
+        let request = pool.request();
+        let result;
+
+        switch (trf_code) {
+            case 'NH':
+                // NH uses hang values (AMT_F20, AMT_F40, AMT_F45)
+                if (hang_20 === undefined || hang_40 === undefined || hang_45 === undefined) {
+                    return res.status(400).json({ 
+                        success: false,
+                        error: 'NH requires hang_20, hang_40, hang_45 values' 
+                    });
+                }
+                request.input('AMT_F20', ms_sql.Decimal(18, 2), hang_20);
+                request.input('AMT_F40', ms_sql.Decimal(18, 2), hang_40);
+                request.input('AMT_F45', ms_sql.Decimal(18, 2), hang_45);
+                result = await request.query(UPDATE_TRF_STD_NH);
+                break;
+
+            case 'HH':
+                // HH uses hang values (AMT_F20, AMT_F40, AMT_F45)
+                if (hang_20 === undefined || hang_40 === undefined || hang_45 === undefined) {
+                    return res.status(400).json({ 
+                        success: false,
+                        error: 'HH requires hang_20, hang_40, hang_45 values' 
+                    });
+                }
+                request.input('AMT_F20', ms_sql.Decimal(18, 2), hang_20);
+                request.input('AMT_F40', ms_sql.Decimal(18, 2), hang_40);
+                request.input('AMT_F45', ms_sql.Decimal(18, 2), hang_45);
+                result = await request.query(UPDATE_TRF_STD_HH);
+                break;
+
+            case 'NR':
+                // NR uses rong values (AMT_E20, AMT_E40, AMT_E45)
+                if (rong_20 === undefined || rong_40 === undefined || rong_45 === undefined) {
+                    return res.status(400).json({ 
+                        success: false,
+                        error: 'NR requires rong_20, rong_40, rong_45 values' 
+                    });
+                }
+                request.input('AMT_E20', ms_sql.Decimal(18, 2), rong_20);
+                request.input('AMT_E40', ms_sql.Decimal(18, 2), rong_40);
+                request.input('AMT_E45', ms_sql.Decimal(18, 2), rong_45);
+                result = await request.query(UPDATE_TRF_STD_NR);
+                break;
+
+            case 'HR':
+                // HR uses rong values (AMT_E20, AMT_E40, AMT_E45)
+                if (rong_20 === undefined || rong_40 === undefined || rong_45 === undefined) {
+                    return res.status(400).json({ 
+                        success: false,
+                        error: 'HR requires rong_20, rong_40, rong_45 values' 
+                    });
+                }
+                request.input('AMT_E20', ms_sql.Decimal(18, 2), rong_20);
+                request.input('AMT_E40', ms_sql.Decimal(18, 2), rong_40);
+                request.input('AMT_E45', ms_sql.Decimal(18, 2), rong_45);
+                result = await request.query(UPDATE_TRF_STD_HR);
+                break;
+        }
+
+        res.json({
+            success: true,
+            message: `Cập nhật ${trf_code} thành công`,
+            rowsAffected: result.rowsAffected[0]
+        });
+
+    } catch (err) {
+        console.error('Error updating TRF_STD data:', err);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to update TRF_STD data',
+            details: err.message 
+        });
+    }
+});
+
 
 // api lấy Bảng phụ thu theo giá dầu DO
 app.get('/api/get_surcharge_table', (req, res) => {

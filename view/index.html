@@ -109,7 +109,7 @@
         }
 
         .price-tag {
-            background: linear-gradient(135deg, #3baa2d 0%);
+            background: linear-gradient(135deg, #df4843 0%);
             color: white;
             padding: 8px 20px;
             border-radius: 20px;
@@ -323,6 +323,300 @@
             }
         }
 
+        /* TRF_STD Section Styles */
+        .trf-std-section {
+            margin-top: 20px;
+        }
+
+        .trf-std-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #11998e;
+        }
+
+        .trf-std-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        .trf-std-card {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .trf-std-card.hang {
+            border: 2px solid #667eea;
+        }
+
+        .trf-std-card.rong {
+            border: 2px solid #f5576c;
+        }
+
+        .trf-std-card-header {
+            padding: 12px 15px;
+            color: white;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .trf-std-card.hang .trf-std-card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .trf-std-card.rong .trf-std-card-header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .trf-std-card-body {
+            padding: 15px;
+            background: #fff;
+        }
+
+        .trf-std-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .trf-std-row:last-child {
+            border-bottom: none;
+        }
+
+        .trf-std-row .label {
+            color: #666;
+            font-size: 13px;
+        }
+
+        .trf-std-row .value {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .trf-std-card.hang .trf-std-row .value {
+            color: #667eea;
+        }
+
+        .trf-std-card.rong .trf-std-row .value {
+            color: #f5576c;
+        }
+
+        .trf-std-loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .trf-std-error {
+            text-align: center;
+            padding: 15px;
+            color: #c00;
+            background: #fee;
+            border-radius: 8px;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgb(17, 153, 31);
+        }
+
+        .refresh-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        @media (max-width: 600px) {
+            .trf-std-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Update TRF_STD Form Styles */
+        .update-trf-section {
+            margin-top: 20px;
+        }
+
+        .update-trf-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ff6b6b;
+        }
+
+        .update-form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .update-form-card {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 2px solid #ddd;
+        }
+
+        .update-form-card.hang {
+            border-color: #667eea;
+        }
+
+        .update-form-card.rong {
+            border-color: #f5576c;
+        }
+
+        .update-form-header {
+            padding: 12px 15px;
+            color: white;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .update-form-card.hang .update-form-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .update-form-card.rong .update-form-header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .update-form-body {
+            padding: 15px;
+            background: #fff;
+        }
+
+        .update-input-group {
+            margin-bottom: 12px;
+        }
+
+        .update-input-group label {
+            display: block;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .update-input-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .update-input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .update-form-card.rong .update-input-group input:focus {
+            border-color: #f5576c;
+        }
+
+        .update-btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .update-btn {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .update-btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .update-btn.primary.rong {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .update-btn.secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .update-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .update-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .update-message {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .update-message.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .update-message.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .update-message.hidden {
+            display: none;
+        }
+
+        .copy-from-result-btn {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            margin-left: 10px;
+            transition: transform 0.2s;
+        }
+
+        .copy-from-result-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 600px) {
+            .update-form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         @media (max-width: 600px) {
             .surcharge-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -425,6 +719,123 @@
                     <div class="surcharge-item rong">
                         <div class="size">45' (AMT_E45)</div>
                         <div class="value" id="rong45">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TRF_STD Section - Biểu cước hiện tại từ SQL Server -->
+        <div class="card trf-std-section">
+            <div class="form-group">
+                <h4>🏷️ Biểu Cước phụ thu hiện tại ( PLTOS : TRF_STD)</h4>
+                <button class="refresh-btn" id="refreshTrfBtn" onclick="loadTrfStdData()">
+                    🔄 Làm mới
+                </button>
+            </div>
+            
+            <div id="trfStdLoading" class="trf-std-loading hidden">
+                <div class="spinner"></div>
+                <p>Đang tải dữ liệu...</p>
+            </div>
+            
+            <div id="trfStdError" class="trf-std-error hidden"></div>
+            
+            <div id="trfStdContent" class="trf-std-grid">
+                <!-- Container Hàng -->
+                <div class="trf-std-card hang">
+                    <div class="trf-std-card-header">📦 Container Hàng (HH + NH)</div>
+                    <div class="trf-std-card-body">
+                        <div class="trf-std-row">
+                            <span class="label">20' (AMT_F20)</span>
+                            <span class="value" id="trfHang20">-</span>
+                        </div>
+                        <div class="trf-std-row">
+                            <span class="label">40' (AMT_F40)</span>
+                            <span class="value" id="trfHang40">-</span>
+                        </div>
+                        <div class="trf-std-row">
+                            <span class="label">45' (AMT_F45)</span>
+                            <span class="value" id="trfHang45">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Container Rỗng -->
+                <div class="trf-std-card rong">
+                    <div class="trf-std-card-header">📦 Container Rỗng (NR + HR)</div>
+                    <div class="trf-std-card-body">
+                        <div class="trf-std-row">
+                            <span class="label">20' (AMT_E20)</span>
+                            <span class="value" id="trfRong20">-</span>
+                        </div>
+                        <div class="trf-std-row">
+                            <span class="label">40' (AMT_E40)</span>
+                            <span class="value" id="trfRong40">-</span>
+                        </div>
+                        <div class="trf-std-row">
+                            <span class="label">45' (AMT_E45)</span>
+                            <span class="value" id="trfRong45">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Update TRF_STD Section -->
+        <div class="card update-trf-section">
+            <div class="form-group">
+                <h4>✏️ Cập nhật Biểu Cước phụ thu (TRF_STD)</h4>
+                <button class="copy-from-result-btn" onclick="copyFromResult()" title="Sao chép từ kết quả tra cứu">
+                    📋 Copy từ kết quả tra cứu
+                </button>
+            </div>
+            
+            <div class="update-form-grid">
+                <!-- Form Container Hàng -->
+                <div class="update-form-card hang">
+                    <div class="update-form-header">📦 Container Hàng (NH + HH)</div>
+                    <div class="update-form-body">
+                        <div class="update-input-group">
+                            <label>20' (AMT_F20)</label>
+                            <input type="number" id="updateHang20" placeholder="Nhập giá trị...">
+                        </div>
+                        <div class="update-input-group">
+                            <label>40' (AMT_F40)</label>
+                            <input type="number" id="updateHang40" placeholder="Nhập giá trị...">
+                        </div>
+                        <div class="update-input-group">
+                            <label>45' (AMT_F45)</label>
+                            <input type="number" id="updateHang45" placeholder="Nhập giá trị...">
+                        </div>
+                        <div class="update-btn-group">
+                            <button class="update-btn secondary" onclick="clearHangForm()">Xóa</button>
+                            <button class="update-btn primary" id="updateHangBtn" onclick="updateTrfStdHang()">Cập nhật NH + HH</button>
+                        </div>
+                        <div id="hangUpdateMessage" class="update-message hidden"></div>
+                    </div>
+                </div>
+                
+                <!-- Form Container Rỗng -->
+                <div class="update-form-card rong">
+                    <div class="update-form-header">📦 Container Rỗng (NR + HR)</div>
+                    <div class="update-form-body">
+                        <div class="update-input-group">
+                            <label>20' (AMT_E20)</label>
+                            <input type="number" id="updateRong20" placeholder="Nhập giá trị...">
+                        </div>
+                        <div class="update-input-group">
+                            <label>40' (AMT_E40)</label>
+                            <input type="number" id="updateRong40" placeholder="Nhập giá trị...">
+                        </div>
+                        <div class="update-input-group">
+                            <label>45' (AMT_E45)</label>
+                            <input type="number" id="updateRong45" placeholder="Nhập giá trị...">
+                        </div>
+                        <div class="update-btn-group">
+                            <button class="update-btn secondary" onclick="clearRongForm()">Xóa</button>
+                            <button class="update-btn primary rong" id="updateRongBtn" onclick="updateTrfStdRong()">Cập nhật NR + HR</button>
+                        </div>
+                        <div id="rongUpdateMessage" class="update-message hidden"></div>
                     </div>
                 </div>
             </div>
@@ -671,6 +1082,274 @@
         function formatNumber(value) {
             if (value === 0) return '0';
             return new Intl.NumberFormat('vi-VN').format(value);
+        }
+
+        // ============================================================================
+        // TRF_STD Functions - Biểu cước từ SQL Server
+        // ============================================================================
+
+        // Load TRF_STD data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load TRF_STD data after auth check
+            setTimeout(() => {
+                if (localStorage.getItem('token')) {
+                    loadTrfStdData();
+                }
+            }, 500);
+        });
+
+        // Load TRF_STD data from API
+        async function loadTrfStdData() {
+            const loadingEl = document.getElementById('trfStdLoading');
+            const errorEl = document.getElementById('trfStdError');
+            const contentEl = document.getElementById('trfStdContent');
+            const refreshBtn = document.getElementById('refreshTrfBtn');
+
+            // Show loading
+            loadingEl.classList.remove('hidden');
+            errorEl.classList.add('hidden');
+            contentEl.style.opacity = '0.5';
+            refreshBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE}/get_trf_std`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load TRF_STD data');
+                }
+
+                const data = await response.json();
+                renderTrfStdData(data);
+
+            } catch (error) {
+                console.error('Error loading TRF_STD:', error);
+                errorEl.textContent = 'Lỗi tải dữ liệu biểu cước. Vui lòng thử lại!';
+                errorEl.classList.remove('hidden');
+            } finally {
+                loadingEl.classList.add('hidden');
+                contentEl.style.opacity = '1';
+                refreshBtn.disabled = false;
+            }
+        }
+
+        // Render TRF_STD data
+        function renderTrfStdData(data) {
+            // Container Hàng: lấy từ HH hoặc NH (cả 2 có giá trị giống nhau cho hang_*)
+            const hangData = data.HH || data.NH || {};
+            document.getElementById('trfHang20').textContent = formatCurrency(hangData.hang_20 || 0);
+            document.getElementById('trfHang40').textContent = formatCurrency(hangData.hang_40 || 0);
+            document.getElementById('trfHang45').textContent = formatCurrency(hangData.hang_45 || 0);
+
+            // Container Rỗng: lấy từ NR hoặc HR (cả 2 có giá trị giống nhau cho rong_*)
+            const rongData = data.NR || data.HR || {};
+            document.getElementById('trfRong20').textContent = formatCurrency(rongData.rong_20 || 0);
+            document.getElementById('trfRong40').textContent = formatCurrency(rongData.rong_40 || 0);
+            document.getElementById('trfRong45').textContent = formatCurrency(rongData.rong_45 || 0);
+        }
+
+        // ============================================================================
+        // Update TRF_STD Functions
+        // ============================================================================
+
+        // Copy values from fuel price result to update form
+        function copyFromResult() {
+            const hang20 = document.getElementById('hang20').textContent;
+            const hang40 = document.getElementById('hang40').textContent;
+            const hang45 = document.getElementById('hang45').textContent;
+            const rong20 = document.getElementById('rong20').textContent;
+            const rong40 = document.getElementById('rong40').textContent;
+            const rong45 = document.getElementById('rong45').textContent;
+
+            // Parse currency values to numbers
+            const parseValue = (str) => {
+                if (!str || str === '-') return '';
+                return parseInt(str.replace(/[^0-9]/g, '')) || '';
+            };
+
+            document.getElementById('updateHang20').value = parseValue(hang20);
+            document.getElementById('updateHang40').value = parseValue(hang40);
+            document.getElementById('updateHang45').value = parseValue(hang45);
+            document.getElementById('updateRong20').value = parseValue(rong20);
+            document.getElementById('updateRong40').value = parseValue(rong40);
+            document.getElementById('updateRong45').value = parseValue(rong45);
+
+            alert('Đã sao chép giá trị từ kết quả tra cứu!');
+        }
+
+        // Clear Hang form
+        function clearHangForm() {
+            document.getElementById('updateHang20').value = '';
+            document.getElementById('updateHang40').value = '';
+            document.getElementById('updateHang45').value = '';
+            hideMessage('hangUpdateMessage');
+        }
+
+        // Clear Rong form
+        function clearRongForm() {
+            document.getElementById('updateRong20').value = '';
+            document.getElementById('updateRong40').value = '';
+            document.getElementById('updateRong45').value = '';
+            hideMessage('rongUpdateMessage');
+        }
+
+        // Show message
+        function showMessage(elementId, message, isSuccess) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.className = `update-message ${isSuccess ? 'success' : 'error'}`;
+            el.classList.remove('hidden');
+
+            // Auto hide after 5 seconds
+            setTimeout(() => hideMessage(elementId), 5000);
+        }
+
+        // Hide message
+        function hideMessage(elementId) {
+            document.getElementById(elementId).classList.add('hidden');
+        }
+
+        // Update TRF_STD for Container Hàng (NH + HH)
+        async function updateTrfStdHang() {
+            const hang20 = document.getElementById('updateHang20').value;
+            const hang40 = document.getElementById('updateHang40').value;
+            const hang45 = document.getElementById('updateHang45').value;
+
+            // Validate
+            if (!hang20 || !hang40 || !hang45) {
+                showMessage('hangUpdateMessage', 'Vui lòng nhập đầy đủ giá trị!', false);
+                return;
+            }
+
+            const btn = document.getElementById('updateHangBtn');
+            btn.disabled = true;
+            btn.textContent = 'Đang cập nhật...';
+
+            try {
+                // Update NH
+                const responseNH = await fetch(`${API_BASE}/update_trf_std`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        trf_code: 'NH',
+                        hang_20: parseFloat(hang20),
+                        hang_40: parseFloat(hang40),
+                        hang_45: parseFloat(hang45)
+                    })
+                });
+
+                if (!responseNH.ok) {
+                    const errData = await responseNH.json();
+                    throw new Error(errData.error || 'Failed to update NH');
+                }
+
+                // Update HH
+                const responseHH = await fetch(`${API_BASE}/update_trf_std`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        trf_code: 'HH',
+                        hang_20: parseFloat(hang20),
+                        hang_40: parseFloat(hang40),
+                        hang_45: parseFloat(hang45)
+                    })
+                });
+
+                if (!responseHH.ok) {
+                    const errData = await responseHH.json();
+                    throw new Error(errData.error || 'Failed to update HH');
+                }
+
+                showMessage('hangUpdateMessage', '✓ Cập nhật NH + HH thành công!', true);
+                
+                // Reload TRF_STD data to reflect changes
+                loadTrfStdData();
+
+            } catch (error) {
+                console.error('Error updating Hang:', error);
+                showMessage('hangUpdateMessage', `✗ Lỗi: ${error.message}`, false);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Cập nhật NH + HH';
+            }
+        }
+
+        // Update TRF_STD for Container Rỗng (NR + HR)
+        async function updateTrfStdRong() {
+            const rong20 = document.getElementById('updateRong20').value;
+            const rong40 = document.getElementById('updateRong40').value;
+            const rong45 = document.getElementById('updateRong45').value;
+
+            // Validate
+            if (!rong20 || !rong40 || !rong45) {
+                showMessage('rongUpdateMessage', 'Vui lòng nhập đầy đủ giá trị!', false);
+                return;
+            }
+
+            const btn = document.getElementById('updateRongBtn');
+            btn.disabled = true;
+            btn.textContent = 'Đang cập nhật...';
+
+            try {
+                // Update NR
+                const responseNR = await fetch(`${API_BASE}/update_trf_std`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        trf_code: 'NR',
+                        rong_20: parseFloat(rong20),
+                        rong_40: parseFloat(rong40),
+                        rong_45: parseFloat(rong45)
+                    })
+                });
+
+                if (!responseNR.ok) {
+                    const errData = await responseNR.json();
+                    throw new Error(errData.error || 'Failed to update NR');
+                }
+
+                // Update HR
+                const responseHR = await fetch(`${API_BASE}/update_trf_std`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        trf_code: 'HR',
+                        rong_20: parseFloat(rong20),
+                        rong_40: parseFloat(rong40),
+                        rong_45: parseFloat(rong45)
+                    })
+                });
+
+                if (!responseHR.ok) {
+                    const errData = await responseHR.json();
+                    throw new Error(errData.error || 'Failed to update HR');
+                }
+
+                showMessage('rongUpdateMessage', '✓ Cập nhật NR + HR thành công!', true);
+                
+                // Reload TRF_STD data to reflect changes
+                loadTrfStdData();
+
+            } catch (error) {
+                console.error('Error updating Rong:', error);
+                showMessage('rongUpdateMessage', `✗ Lỗi: ${error.message}`, false);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Cập nhật NR + HR';
+            }
         }
 
     </script>
