@@ -7,7 +7,7 @@ const ms_sql = require('mssql');
 const axios = require("axios");
 const sqlite3 = require('sqlite3').verbose();
 const crypto = require('crypto');
-const { tinhGiaCuocTheoDauDO } = require('./calculator_gasoline');
+const { tinhGiaCuocTheoDauDO , bangPhuThu } = require('./calculator_gasoline');
 
 // Token storage (in-memory - use Redis for production)
 const activeTokens = new Map();
@@ -302,7 +302,6 @@ function generateToken() {
 // Middleware xác thực token
 function authMiddleware(req, res, next) {
     const authHeader = req.headers['authorization'];
-    console.log('authHeader :>> ', authHeader);
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
     if (!token) {
@@ -348,28 +347,39 @@ function adminMiddleware(req, res, next) {
 // ============================================================================
 
 // Define a simple route
-app.get('/' , (req, res) => {
-    // tạo giao diện đơn giản để hiển thị thông tin về dịch vụ tính cước phụ thu nhiên liệu DO của MPC
+app.get('/', (req, res) => {
     // res từ index.html trong thư mục view
     res.sendFile(__dirname + '/view/index.html');
-    // res.send('service for MPC fuel price and surcharge calculation');
 });
 
-// Route đăng nhập
-app.get('/login', (req, res) => {
-    res.sendFile(__dirname + '/view/login.html');
-});
-
+// api lấy giá nhiên liệu DO 0,05S-II của Petrolimex từ API https://giaxanghomnay.com/api/pvdate/{date} 
+// với date là ngày hiện tại và tính cước phụ thu theo bảng phụ thu đã cho ở trên với giá nhiên liệu DO 0,05S-II lấy được từ API và loại container là "hang_20", "hang_40", "hang_45" ,  "rong_20", "rong_40", "rong_45" 
+// rồi lưu kết quả vào database sqlite và trả về kết quả tính cước phụ thu cho từng loại container trên console
 // ví dụ : localhost:3000/api/get_fuel_price?date=2026-03-25 
-app.get('/api/get_fuel_price' , authMiddleware, async (req, res) => {
+app.get('/api/get_fuel_price', authMiddleware, async (req, res) => {
     try {
-        let date = req.query.date || new Date().toISOString().split('T')[0]; // Get date from query or use today's date
+        // Get date from query or use today's date
+        let date = req.query.date || new Date().toISOString().split('T')[0];
 
-        console.log('date_in :>> ', date);
+        // kiểm tra nếu date không hợp lệ thì trả về lỗi
+        if (isNaN(Date.parse(date))) {
+            date = new Date().toISOString().split('T')[0]; // Use today's date if invalid
+        }
+
+        // kiểm tra trong database sqlite đã có dữ liệu cho ngày date và brand petrolimex và title DO 0,05S-II chưa, nếu có rồi thì trả về dữ liệu đó mà không gọi API nữa
+        const existingData = await new Promise((resolve, reject) => {
+            sqlite_db.get(`SELECT * FROM fuel_prices WHERE date = ? AND brand = ? AND title = ?`,
+                [date, "petrolimex", "DO 0,05S-II"],
+                (err, row) => {
+                    if (err) reject(err);
+                    else resolve(row);
+                });
+        });
+
+        // nếu đã có dữ liệu thì trả về dữ liệu đó mà không gọi API nữa
+        if (existingData) { return res.json(existingData); }
 
         // lấy dữ liệu giá nhiên liệu DO 0,05S-II của Petrolimex từ API https://giaxanghomnay.com/api/pvdate/{date} với date là ngày hiện tại
-
-        // let date = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
         const apiData = await getFuelByDate(date);
         const result = getFuelByTitle(apiData, "petrolimex", "DO 0,05S-II");
         const giaDauDO = result.zone1_price || 0; // Use actual DO price from Petrolimex data or default to 0
@@ -422,6 +432,48 @@ app.get('/api/get_fuel_price' , authMiddleware, async (req, res) => {
         console.error('Error fetching fuel price:', err);
         res.status(500).json({ error: 'Failed to fetch fuel price' });
     }
+});
+
+
+// api lấy dữ liêu trong bảng TRF_STD của SQL Server với 4 loại cước: NH, HH, NR, HR và in ra console
+app.get('/api/get_trf_std', async (req, res) => {
+    try {
+        let pool = await ms_sql.connect(dbConfig);
+        let result_SELECT_TRF_STD = (await pool.request().query(SELECT_TRF_STD)).recordset;
+
+        // format result_SELECT_TRF_STD to object with key is TRF_CODE and value is an object with keys hang_20, hang_40, hang_45, rong_20, rong_40, rong_45 and values are corresponding values from result_SELECT_TRF_STD
+        let formattedResult = {};
+        result_SELECT_TRF_STD.forEach(item => {
+            formattedResult[item.TRF_CODE] = {
+                hang_20: item.AMT_F20 || 0,
+                hang_40: item.AMT_F40 || 0,
+                hang_45: item.AMT_F45 || 0,
+                rong_20: item.AMT_E20 || 0,
+                rong_40: item.AMT_E40 || 0,
+                rong_45: item.AMT_E45 || 0
+            };
+        });
+
+        res.json(formattedResult);
+
+    } catch (err) {
+        console.error('Error fetching TRF_STD data:', err);
+        res.status(500).json({ error: 'Failed to fetch TRF_STD data' });
+    }
+});
+
+// api lấy Bảng phụ thu theo giá dầu DO
+app.get('/api/get_surcharge_table', (req, res) => {
+    res.json(bangPhuThu);
+});
+
+// -----------------------------------------------------------------------------------------------------
+
+
+
+// Route đăng nhập
+app.get('/login', (req, res) => {
+    res.sendFile(__dirname + '/view/login.html');
 });
 
 // POST /api/login - Đăng nhập

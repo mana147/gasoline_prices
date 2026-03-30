@@ -52,6 +52,7 @@
             gap: 15px;
             align-items: center;
             flex-wrap: wrap;
+            justify-content: space-between;
         }
 
         .form-group label {
@@ -78,7 +79,6 @@
             color: white;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
         }
@@ -109,7 +109,7 @@
         }
 
         .price-tag {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            background: linear-gradient(135deg, #3baa2d 0%);
             color: white;
             padding: 8px 20px;
             border-radius: 20px;
@@ -184,7 +184,7 @@
         }
 
         .surcharge-item .value {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 700;
         }
 
@@ -222,6 +222,107 @@
             display: none;
         }
 
+        /* Surcharge Table Styles */
+        .surcharge-table-section {
+            margin-top: 30px;
+        }
+
+        .surcharge-table-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .surcharge-table {
+            margin-top: 10px;
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .surcharge-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .surcharge-table th {
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .surcharge-table td {
+            padding: 10px 8px;
+            text-align: center;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .surcharge-table tbody tr:hover {
+            background-color: #f5f5ff;
+        }
+
+        .surcharge-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .surcharge-table tbody tr:nth-child(even):hover {
+            background-color: #f5f5ff;
+        }
+
+        .surcharge-table .price-range {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .surcharge-table .hang-col {
+            background-color: rgba(102, 126, 234, 0.1);
+        }
+
+        .surcharge-table .rong-col {
+            background-color: rgba(245, 87, 108, 0.1);
+        }
+
+        .table-header-group {
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .table-header-group.hang {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .table-header-group.rong {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .toggle-table-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .toggle-table-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(17, 153, 142, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .surcharge-table {
+                font-size: 11px;
+            }
+
+            .surcharge-table th,
+            .surcharge-table td {
+                padding: 6px 4px;
+            }
+        }
+
         @media (max-width: 600px) {
             .surcharge-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -242,10 +343,12 @@
 
         <div class="card">
             <div class="form-group">
-                <label for="dateInput">Chọn ngày:</label>
-                <input type="date" id="dateInput">
+                <div>
+                    <label for="dateInput">📋 Chọn ngày:</label>
+                    <input type="date" id="dateInput">
+                </div>
                 <button class="btn" id="fetchBtn" onclick="fetchFuelPrice()">
-                    Tra cứu giá
+                    Tra cứu giá xăng dầu
                 </button>
             </div>
         </div>
@@ -326,6 +429,38 @@
                 </div>
             </div>
         </div>
+
+        <!-- Bảng Phụ Thu Section -->
+        <div class="card surcharge-table-section">
+            <div class="form-group" >
+                <h4>📋 Bảng phụ thu theo giá dầu</h4>
+                <button class="toggle-table-btn" id="toggleTableBtn" onclick="toggleSurchargeTable()">
+                    Hiện bảng phụ thu
+                </button>
+            </div>
+            <div id="surchargeTableContainer" class="hidden">
+                <table class="surcharge-table">
+                    <thead>
+                        <tr>
+                            <th rowspan="2">Giá DO (VNĐ)</th>
+                            <th colspan="3" class="table-header-group hang">Container Hàng</th>
+                            <th colspan="3" class="table-header-group rong">Container Rỗng</th>
+                        </tr>
+                        <tr>
+                            <th>20'</th>
+                            <th>40'</th>
+                            <th>45'</th>
+                            <th>20'</th>
+                            <th>40'</th>
+                            <th>45'</th>
+                        </tr>
+                    </thead>
+                    <tbody id="surchargeTableBody">
+                        <!-- Data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -351,7 +486,6 @@
         // Check authentication on page load
         document.addEventListener('DOMContentLoaded', async function () {
             const token = localStorage.getItem('token');
-            console.log('token :>> ', token);
 
             if (!token) {
                 // No token, redirect to login
@@ -361,10 +495,9 @@
 
             // Verify token is valid
             try {
-                const response = await fetch(
-                    `${API_BASE}/me`,
-                    { headers: { 'Authorization': `Bearer ${token}` } }
-                );
+
+                // Gửi yêu cầu xác thực đến API với header Authorization chứa token
+                const response = await fetch(`${API_BASE}/me`, { headers: { 'Authorization': `Bearer ${token}` } });
 
                 // nếu token không hợp lệ, API sẽ trả về 401 hoặc 403 => response.ok sẽ là false
                 if (!response.ok) {
@@ -414,16 +547,13 @@
             fetchBtn.disabled = true;
 
             try {
-                const response = await fetch(
-                    `${API_URL}?date=${date}`,
-                    { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }
-                );
+                // Fetch fuel price data from API with authentication header
+                const response = await fetch(`${API_URL}?date=${date}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
 
+                // nếu response trả về lỗi (401, 403, 500...) sẽ ném lỗi để catch xử lý
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
+                // Parse JSON response
                 const data = await response.json();
 
                 // Update UI with data
@@ -460,6 +590,88 @@
                 fetchFuelPrice();
             }
         });
+
+        // ============================================================================
+        // Surcharge Table Functions
+        // ============================================================================
+
+        let surchargeTableLoaded = false;
+
+        // Toggle surcharge table visibility
+        function toggleSurchargeTable() {
+            const container = document.getElementById('surchargeTableContainer');
+            const btn = document.getElementById('toggleTableBtn');
+
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                btn.textContent = 'Ẩn bảng phụ thu';
+
+                // Load data if not loaded yet
+                if (!surchargeTableLoaded) {
+                    loadSurchargeTable();
+                }
+            } else {
+                container.classList.add('hidden');
+                btn.textContent = 'Hiện bảng phụ thu';
+            }
+        }
+
+        // Load surcharge table data from API
+        async function loadSurchargeTable() {
+            try {
+                const response = await fetch(`${API_BASE}/get_surcharge_table`);
+
+                if (!response.ok) {
+                    throw new Error('Failed to load surcharge table');
+                }
+
+                const data = await response.json();
+                renderSurchargeTable(data);
+                surchargeTableLoaded = true;
+
+            } catch (error) {
+                console.error('Error loading surcharge table:', error);
+                document.getElementById('surchargeTableBody').innerHTML = `
+                    <tr>
+                        <td colspan="7" style="color: red; text-align: center;">
+                            Lỗi tải dữ liệu bảng phụ thu
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Render surcharge table
+        function renderSurchargeTable(data) {
+            const tbody = document.getElementById('surchargeTableBody');
+            let html = '';
+
+            data.forEach(item => {
+                const priceRange = item.min === 0
+                    ? `0 - ${formatNumber(item.max)}`
+                    : `${formatNumber(item.min)} - ${formatNumber(item.max)}`;
+
+                html += `
+                    <tr>
+                        <td class="price-range">${priceRange}</td>
+                        <td class="hang-col">${formatNumber(item.surcharge.hang_20)}</td>
+                        <td class="hang-col">${formatNumber(item.surcharge.hang_40)}</td>
+                        <td class="hang-col">${formatNumber(item.surcharge.hang_45)}</td>
+                        <td class="rong-col">${formatNumber(item.surcharge.rong_20)}</td>
+                        <td class="rong-col">${formatNumber(item.surcharge.rong_40)}</td>
+                        <td class="rong-col">${formatNumber(item.surcharge.rong_45)}</td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        // Format number with thousand separator
+        function formatNumber(value) {
+            if (value === 0) return '0';
+            return new Intl.NumberFormat('vi-VN').format(value);
+        }
 
     </script>
 </body>
