@@ -6,7 +6,7 @@ const bodyParser = require('body-parser');
 const ms_sql = require('mssql');
 const axios = require("axios");
 const sqlite3 = require('sqlite3').verbose();
-const { tinhGiaCuocTheoDauDO , bangPhuThu } = require('./calculator_gasoline');
+const { tinhGiaCuocTheoDauDO, bangPhuThu } = require('./calculator_gasoline');
 const { activeTokens, generateToken, authMiddleware, adminMiddleware } = require('./middleware/auth');
 const { router: authRouter, initDB: initAuthDB } = require('./controller/authController');
 
@@ -57,7 +57,8 @@ WHERE rowguid in(
     'ec426c93-0598-4d4e-9b64-6fae5eefb596', -- NH
     'd5af4366-62e0-4459-bdea-d9e65132813e', -- HH
     '084e21e5-3684-4d41-b00c-c83085a6752a', -- NR
-    'e4f41ae6-9fc4-4ae4-97ae-ef9c0624cd19'  -- HR ) `;
+    'e4f41ae6-9fc4-4ae4-97ae-ef9c0624cd19'  -- HR 
+)`;
 
 let UPDATE_TRF_STD_NH = `
 UPDATE [PRD_MPC].[dbo].[TRF_STD] 
@@ -68,23 +69,23 @@ WHERE rowguid = 'ec426c93-0598-4d4e-9b64-6fae5eefb596' `;
 
 let UPDATE_TRF_STD_HH = `
 UPDATE [PRD_MPC].[dbo].[TRF_STD] 
-SET AMT_F20 = @AMT_F20,
+SET AMT_F20 = @AMT_F20 ,
     AMT_F40 = @AMT_F40 , 
     AMT_F45 = @AMT_F45 
 WHERE rowguid = 'd5af4366-62e0-4459-bdea-d9e65132813e' `;
 
 let UPDATE_TRF_STD_NR = `
 UPDATE [PRD_MPC].[dbo].[TRF_STD] 
-SET AMT_F20 = @AMT_E20,
-    AMT_F40 = @AMT_E40 , 
-    AMT_F45 = @AMT_E45 
+SET AMT_E20 = @AMT_E20 ,
+    AMT_E40 = @AMT_E40 , 
+    AMT_E45 = @AMT_E45 
 WHERE rowguid = '084e21e5-3684-4d41-b00c-c83085a6752a' `;
 
 let UPDATE_TRF_STD_HR = `
 UPDATE [PRD_MPC].[dbo].[TRF_STD] 
-SET AMT_F20 = @AMT_E20,
-    AMT_F40 = @AMT_E40 , 
-    AMT_F45 = @AMT_E45 
+SET AMT_E20 = @AMT_E20 ,
+    AMT_E40 = @AMT_E40 , 
+    AMT_E45 = @AMT_E45 
 WHERE rowguid = 'e4f41ae6-9fc4-4ae4-97ae-ef9c0624cd19' `;
 // --------------------------------------------------------------------
 
@@ -227,7 +228,7 @@ app.get('/api/get_fuel_price', authMiddleware, async (req, res) => {
 
 
 // api lấy dữ liêu trong bảng TRF_STD của SQL Server với 4 loại cước: NH, HH, NR, HR và in ra console
-app.get('/api/get_trf_std', authMiddleware , async (req, res) => {
+app.get('/api/get_trf_std', authMiddleware, async (req, res) => {
     try {
         let pool = await ms_sql.connect(dbConfig);
         let result_SELECT_TRF_STD = (await pool.request().query(SELECT_TRF_STD)).recordset;
@@ -256,16 +257,16 @@ app.get('/api/get_trf_std', authMiddleware , async (req, res) => {
 // api update lại giá cước NH, HH, NR, HR trong bảng TRF_STD 
 // api update bằng POST với body có các trường: trf_code, hang_20, hang_40, hang_45, rong_20, rong_40, rong_45
 
-app.post('/api/update_trf_std', authMiddleware, adminMiddleware, async (req, res) => { 
+app.post('/api/update_trf_std', authMiddleware, adminMiddleware, async (req, res) => {
     try {
         const { trf_code, hang_20, hang_40, hang_45, rong_20, rong_40, rong_45 } = req.body;
 
         // Validate trf_code
         const validCodes = ['NH', 'HH', 'NR', 'HR'];
         if (!trf_code || !validCodes.includes(trf_code)) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 success: false,
-                error: 'Invalid trf_code. Must be one of: NH, HH, NR, HR' 
+                error: 'Invalid trf_code. Must be one of: NH, HH, NR, HR'
             });
         }
 
@@ -277,9 +278,9 @@ app.post('/api/update_trf_std', authMiddleware, adminMiddleware, async (req, res
             case 'NH':
                 // NH uses hang values (AMT_F20, AMT_F40, AMT_F45)
                 if (hang_20 === undefined || hang_40 === undefined || hang_45 === undefined) {
-                    return res.status(400).json({ 
+                    return res.status(400).json({
                         success: false,
-                        error: 'NH requires hang_20, hang_40, hang_45 values' 
+                        error: 'NH requires hang_20, hang_40, hang_45 values'
                     });
                 }
                 request.input('AMT_F20', ms_sql.Decimal(18, 2), hang_20);
@@ -291,9 +292,9 @@ app.post('/api/update_trf_std', authMiddleware, adminMiddleware, async (req, res
             case 'HH':
                 // HH uses hang values (AMT_F20, AMT_F40, AMT_F45)
                 if (hang_20 === undefined || hang_40 === undefined || hang_45 === undefined) {
-                    return res.status(400).json({ 
+                    return res.status(400).json({
                         success: false,
-                        error: 'HH requires hang_20, hang_40, hang_45 values' 
+                        error: 'HH requires hang_20, hang_40, hang_45 values'
                     });
                 }
                 request.input('AMT_F20', ms_sql.Decimal(18, 2), hang_20);
@@ -305,23 +306,25 @@ app.post('/api/update_trf_std', authMiddleware, adminMiddleware, async (req, res
             case 'NR':
                 // NR uses rong values (AMT_E20, AMT_E40, AMT_E45)
                 if (rong_20 === undefined || rong_40 === undefined || rong_45 === undefined) {
-                    return res.status(400).json({ 
+                    return res.status(400).json({
                         success: false,
-                        error: 'NR requires rong_20, rong_40, rong_45 values' 
+                        error: 'NR requires rong_20, rong_40, rong_45 values'
                     });
                 }
+
                 request.input('AMT_E20', ms_sql.Decimal(18, 2), rong_20);
                 request.input('AMT_E40', ms_sql.Decimal(18, 2), rong_40);
                 request.input('AMT_E45', ms_sql.Decimal(18, 2), rong_45);
                 result = await request.query(UPDATE_TRF_STD_NR);
+
                 break;
 
             case 'HR':
                 // HR uses rong values (AMT_E20, AMT_E40, AMT_E45)
                 if (rong_20 === undefined || rong_40 === undefined || rong_45 === undefined) {
-                    return res.status(400).json({ 
+                    return res.status(400).json({
                         success: false,
-                        error: 'HR requires rong_20, rong_40, rong_45 values' 
+                        error: 'HR requires rong_20, rong_40, rong_45 values'
                     });
                 }
                 request.input('AMT_E20', ms_sql.Decimal(18, 2), rong_20);
@@ -339,10 +342,10 @@ app.post('/api/update_trf_std', authMiddleware, adminMiddleware, async (req, res
 
     } catch (err) {
         console.error('Error updating TRF_STD data:', err);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
             error: 'Failed to update TRF_STD data',
-            details: err.message 
+            details: err.message
         });
     }
 });
