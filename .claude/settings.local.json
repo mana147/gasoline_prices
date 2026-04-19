@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.\\(js|json|sh|sql\\)$\")",
+      "Bash(node -e \"require\\('./src/app'\\)\")"
+    ]
+  }
+}
