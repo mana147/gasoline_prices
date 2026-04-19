@@ -73,7 +73,7 @@
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.ok) {
-                    window.location.href = '/';
+                    window.location.href = '/menu';
                 } else {
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
@@ -131,7 +131,7 @@
                     }
 
                     setTimeout(() => {
-                        window.location.href = '/';
+                        window.location.href = '/menu';
                     }, 1000);
 
                 } else {

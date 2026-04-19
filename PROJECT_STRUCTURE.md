@@ -61,13 +61,15 @@ gasoline_prices/
 │   │   └── calculator_gasoline.js   # Bảng phụ thu + hàm tính toán
 │   │
 │   └── views/                       # EJS templates (thay thế view/ tĩnh cũ)
-│       ├── index.ejs                # Dashboard chính (date picker → fetch → hiển thị phụ thu)
+│       ├── index.ejs                # Tool MPC Fuel Service (date picker → fetch → hiển thị phụ thu)
+│       ├── menu.ejs                 # Trang menu trung gian sau đăng nhập (chọn tool)
 │       └── login.ejs                # Trang đăng nhập
 │
 ├── public/
 │   ├── css/
 │   │   ├── index.css
-│   │   └── login.css
+│   │   ├── login.css
+│   │   └── menu.css                 # Styles cho trang menu tool
 │   └── logo.png
 │
 └── database/
@@ -125,7 +127,8 @@ POST /api/update_trf_std  { trf_code: "NH", hang_20, hang_40, hang_45 }
 
 | Method | Route | Auth | Role | Mô tả |
 |--------|-------|------|------|-------|
-| GET | `/` | — | — | Render index.ejs (dashboard) |
+| GET | `/` | — | — | Render index.ejs (tool MPC Fuel Service) |
+| GET | `/menu` | — | — | Render menu.ejs (trang chọn tool) |
 | GET | `/login` | — | — | Render login.ejs |
 | POST | `/api/login` | — | — | Đăng nhập, trả token |
 | POST | `/api/logout` | ✓ | user | Hủy token |

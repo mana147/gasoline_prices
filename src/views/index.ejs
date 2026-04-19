@@ -6,11 +6,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MPC - service</title>
     <link rel="stylesheet" href="/css/index.css">
+    <style>
+        .back-to-menu {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-decoration: none;
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.03);
+            transition: color 0.2s, border-color 0.2s, background 0.2s;
+            white-space: nowrap;
+        }
+        .back-to-menu:hover {
+            color: var(--text);
+            border-color: var(--border-strong);
+            background: rgba(255,255,255,0.06);
+        }
+    </style>
 </head>
 
 <body>
     <div class="container">
         <header class="page-header">
+            <a href="/menu" class="back-to-menu">← Menu</a>
             <div class="brand">
                 <div class="icon"><img src="/logo.png" alt="logo"></div>
                 <div class="brand-content">

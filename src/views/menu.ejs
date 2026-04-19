@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu - MPC Service</title>
+    <link rel="stylesheet" href="/css/menu.css">
+</head>
+<body>
+
+    <header class="menu-header">
+        <div class="menu-header-brand">
+            <img src="/logo.png" alt="logo">
+            <span>MPC Service</span>
+        </div>
+        <div class="menu-header-right">
+            <span class="header-username" id="headerUsername"></span>
+            <button class="btn-logout" id="btnLogout">Đăng xuất</button>
+        </div>
+    </header>
+
+    <main class="menu-container">
+        <div class="menu-hero">
+            <h2>Chọn công cụ</h2>
+            <p>Chọn một công cụ bên dưới để bắt đầu làm việc.</p>
+        </div>
+
+        <div class="tool-grid">
+
+            <!-- Tool 1: MPC Fuel Service -->
+            <a href="/" class="tool-card">
+                <div class="tool-card-icon">⛽</div>
+                <div class="tool-card-body">
+                    <div class="tool-card-title">MPC Fuel Service</div>
+                    <div class="tool-card-desc">Tra cứu giá dầu DO theo ngày, tính phụ thu container hàng và rỗng, đồng bộ biểu cước TRF_STD.</div>
+                </div>
+                <div class="tool-card-footer">
+                    <span class="badge-active">Hoạt động</span>
+                    <span class="tool-card-arrow">→</span>
+                </div>
+            </a>
+
+            <!-- Tool 2: Config Zkteco -->
+            <div class="tool-card disabled">
+                <div class="tool-card-icon">🕐</div>
+                <div class="tool-card-body">
+                    <div class="tool-card-title">Config máy chấm công Zkteco</div>
+                    <div class="tool-card-desc">Cấu hình và quản lý thiết bị chấm công ZKTeco trong hệ thống.</div>
+                </div>
+                <div class="tool-card-footer">
+                    <span class="badge-coming-soon">Coming Soon</span>
+                </div>
+            </div>
+
+            <!-- Tool 3: Monitoring -->
+            <div class="tool-card disabled">
+                <div class="tool-card-icon">🖥️</div>
+                <div class="tool-card-body">
+                    <div class="tool-card-title">Monitoring hệ thống</div>
+                    <div class="tool-card-desc">Theo dõi trạng thái server, PC và camera IP trong toàn bộ hệ thống.</div>
+                </div>
+                <div class="tool-card-footer">
+                    <span class="badge-coming-soon">Coming Soon</span>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/me', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!res.ok) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    window.location.href = '/login';
+                    return;
+                }
+            } catch (e) {
+                window.location.href = '/login';
+                return;
+            }
+
+            const raw = localStorage.getItem('user');
+            if (raw) {
+                const user = JSON.parse(raw);
+                const name = user.full_name || user.username || '';
+                const role = user.role === 'admin' ? ' (Admin)' : '';
+                document.getElementById('headerUsername').textContent = name + role;
+            }
+
+            document.getElementById('btnLogout').addEventListener('click', async function () {
+                const t = localStorage.getItem('token');
+                if (t) {
+                    try {
+                        await fetch('/api/logout', {
+                            method: 'POST',
+                            headers: { 'Authorization': 'Bearer ' + t }
+                        });
+                    } catch (e) { /* ignore */ }
+                }
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/login';
+            });
+        });
+    </script>
+
+</body>
+</html>
