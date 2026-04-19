@@ -219,8 +219,11 @@ input:focus {
   border-color: transparent;
 }
 
+/* Đồng bộ màu cho cả hai nút cập nhật NH + HH và NR + HR */
 .update-btn.primary.rong {
-  background: #2e3032;
+  background: var(--accent);
+  color: white;
+  border-color: transparent;
 }
 
 .update-btn.secondary {
@@ -393,6 +396,97 @@ input:focus {
 
 .hidden {
   display: none !important;
+}
+
+/* Responsive adjustments for iPhone X / XS */
+@media (max-width: 420px) {
+  body {
+    padding: 20px 12px 24px;
+  }
+
+  .container {
+    padding: 0;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .form-group {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .form-group > div {
+    gap: 6px;
+  }
+
+  .card {
+    padding: 20px;
+  }
+
+  .info-grid,
+  .surcharge-grid,
+  .trf-std-grid,
+  .update-form-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .surcharge-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .surcharge-item {
+    padding: 16px;
+  }
+
+  .surcharge-item .value {
+    font-size: 1.05rem;
+  }
+
+  .update-input-group,
+  .trf-std-row {
+    grid-template-columns: 1fr;
+  }
+
+  .update-btn-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .btn,
+  .refresh-btn,
+  .toggle-table-btn,
+  .copy-from-result-btn,
+  .update-btn {
+    width: 100%;
+    padding: 12px 14px;
+  }
+
+  #surchargeTableContainer {
+    overflow-x: auto;
+  }
+
+  .surcharge-table {
+    min-width: 720px;
+  }
+
+  .surcharge-table th,
+  .surcharge-table td {
+    padding: 10px 8px;
+    font-size: 0.85rem;
+  }
+
+  .page-description,
+  .surcharge-section h3,
+  .result-header h2,
+  .form-group h4 {
+    font-size: 0.95rem;
+  }
 }
 
 .surcharge-table {

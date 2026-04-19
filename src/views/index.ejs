@@ -230,11 +230,8 @@
         <div class="card surcharge-table-section">
             <div class="form-group" >
                 <h4>📋 Bảng phụ thu theo giá dầu</h4>
-                <button class="toggle-table-btn" id="toggleTableBtn" onclick="toggleSurchargeTable()">
-                    Hiện bảng phụ thu
-                </button>
             </div>
-            <div id="surchargeTableContainer" class="hidden">
+            <div id="surchargeTableContainer">
                 <table class="surcharge-table">
                     <thead>
                         <tr>
@@ -288,6 +285,7 @@
 
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('dateInput').value = today;
+                await loadSurchargeTable();
 
             } catch (error) {
                 console.error('Auth check failed:', error);
