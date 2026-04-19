@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(grep -E \"\\\\.\\(js|json|sh|sql\\)$\")",
-      "Bash(node -e \"require\\('./src/app'\\)\")"
+      "Bash(node -e \"require\\('./src/app'\\)\")",
+      "Bash(node -e \"const app = require\\('./src/app'\\); console.log\\('App loaded OK'\\);\")"
     ]
   }
 }

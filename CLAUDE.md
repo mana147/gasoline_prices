@@ -42,7 +42,7 @@ src/
 4. Controller saves result via `fuelPrice.model.insertFuelPrice()` then responds
 
 **Key files:**
-- [calculator_gasoline.js](calculator_gasoline.js) — hardcoded surcharge rate table (`bangPhuThu`) with 10 price brackets; maps to 6 container types (`hang_20/40/45`, `rong_20/40/45`)
+- [src/handle/calculator_gasoline.js](src/handle/calculator_gasoline.js) — hardcoded surcharge rate table (`bangPhuThu`) with 10 price brackets; maps to 6 container types (`hang_20/40/45`, `rong_20/40/45`)
 - [src/middleware/auth.js](src/middleware/auth.js) — in-memory token store (Map), 24h expiry, role checks (`user` vs `admin`)
 - [src/models/user.model.js](src/models/user.model.js) — promisified SQLite queries for `users` table
 - [src/models/rate.model.js](src/models/rate.model.js) — SQL Server queries for `TRF_STD` table (NH/HH/NR/HR)
@@ -61,9 +61,19 @@ src/
 
 Token-based, in-memory. Tokens are lost on server restart. Admin role is required for `POST /api/update_trf_std`, `GET /api/users`, and `DELETE /api/users/:id`.
 
+## Maintaining PROJECT_STRUCTURE.md
+
+**REQUIRED**: Whenever you add, remove, or rename any file or directory in this project, you MUST update [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) to reflect the change. This includes:
+- Adding or deleting source files (`src/**`, `public/**`, `views/**`, etc.)
+- Creating new routes, controllers, services, or models
+- Restructuring folders
+- Adding new top-level files
+
+Update the directory tree and any affected sections (API Endpoints, Request Flow, etc.) in the same task — do not defer it.
+
 ## Notable Constraints
 
-- Surcharge brackets are hardcoded in `calculator_gasoline.js` — not database-driven. Change them there.
+- Surcharge brackets are hardcoded in `src/handle/calculator_gasoline.js` — not database-driven. Change them there.
 - All UI text and API error messages are in Vietnamese.
 - SQL Server connection is attempted at startup; failure logs a warning but doesn't prevent startup.
 - The `database/` directory (and its `.db` file) is committed to the repo.

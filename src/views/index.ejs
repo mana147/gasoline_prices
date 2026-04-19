@@ -45,7 +45,7 @@
 
         <div id="resultSection" class="card hidden">
             <div class="result-header">
-                <h2>Kết quả tra cứu: </h2>  
+                <h2>Kết quả tra cứu: </h2>
                 <span class="price-tag" id="priceTag"></span>
             </div>
 
@@ -117,14 +117,14 @@
                     🔄 Làm mới
                 </button>
             </div>
-            
+
             <div id="trfStdLoading" class="trf-std-loading hidden">
                 <div class="spinner"></div>
                 <p>Đang tải dữ liệu...</p>
             </div>
-            
+
             <div id="trfStdError" class="trf-std-error hidden"></div>
-            
+
             <div id="trfStdContent" class="trf-std-grid">
                 <!-- Container Hàng -->
                 <div class="trf-std-card hang">
@@ -144,7 +144,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Container Rỗng -->
                 <div class="trf-std-card rong">
                     <div class="trf-std-card-header">📦 Container Rỗng (NR + HR)</div>
@@ -174,7 +174,7 @@
                     📋 Copy từ kết quả tra cứu
                 </button>
             </div>
-            
+
             <div class="update-form-grid">
                 <!-- Form Container Hàng -->
                 <div class="update-form-card hang">
@@ -199,7 +199,7 @@
                         <div id="hangUpdateMessage" class="update-message hidden"></div>
                     </div>
                 </div>
-                
+
                 <!-- Form Container Rỗng -->
                 <div class="update-form-card rong">
                     <div class="update-form-header">📦 Container Rỗng (NR + HR)</div>
@@ -267,47 +267,25 @@
         API_URL = window.API_URL || API_URL;
         API_BASE = window.API_BASE || API_BASE;
 
-        /**
-         * @file index.html
-         * @description 
-         * Đoạn mã này được thực thi khi sự kiện 'DOMContentLoaded' xảy ra (tức là ngay sau khi trình duyệt đã tải và phân tích xong cấu trúc HTML của trang, trước khi tải xong toàn bộ tài nguyên như ảnh hay CSS).
-         *
-         * Quy trình xử lý:
-         * 1. Kiểm tra sự hiện diện của JWT 'token' trong localStorage.
-         * 2. Nếu không có token: Điều hướng người dùng về trang '/login'.
-         * 3. Nếu có token: Gửi yêu cầu xác thực đến API endpoint `${API_BASE}/me` để kiểm tra tính hợp lệ của token.
-         *    - Nếu Token không hợp lệ (Response !ok): Xóa 'token', 'user' khỏi localStorage và điều hướng về '/login'.
-         *    - Nếu Token hợp lệ: Khởi tạo giá trị mặc định cho phần tử có ID 'dateInput' là ngày hiện tại (định dạng YYYY-MM-DD).
-         * 4. Xử lý lỗi (Catch block): Nếu quá trình fetch gặp lỗi (lỗi mạng...), thực hiện điều hướng về trang '/login'.
-         */
-
-
         // Check authentication on page load
         document.addEventListener('DOMContentLoaded', async function () {
             const token = localStorage.getItem('token');
 
             if (!token) {
-                // No token, redirect to login
                 window.location.href = '/login';
                 return;
             }
 
-            // Verify token is valid
             try {
-
-                // Gửi yêu cầu xác thực đến API với header Authorization chứa token
                 const response = await fetch(`${API_BASE}/me`, { headers: { 'Authorization': `Bearer ${token}` } });
 
-                // nếu token không hợp lệ, API sẽ trả về 401 hoặc 403 => response.ok sẽ là false
                 if (!response.ok) {
-                    // Token invalid, clear and redirect
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
                     window.location.href = '/login';
                     return;
                 }
 
-                // Token valid, continue loading page
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('dateInput').value = today;
 
@@ -341,21 +319,16 @@
                 return;
             }
 
-            // Show loading
             showSection('loadingSection');
             fetchBtn.disabled = true;
 
             try {
-                // Fetch fuel price data from API with authentication header
                 const response = await fetch(`${API_URL}?date=${date}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
 
-                // nếu response trả về lỗi (401, 403, 500...) sẽ ném lỗi để catch xử lý
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-                // Parse JSON response
                 const data = await response.json();
 
-                // Update UI with data
                 document.getElementById('resultDate').textContent = data.date || '-';
                 document.getElementById('resultBrand').textContent = data.brand || '-';
                 document.getElementById('resultTitle').textContent = data.title || '-';
@@ -383,7 +356,6 @@
             }
         }
 
-        // Allow Enter key to trigger search
         document.getElementById('dateInput').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 fetchFuelPrice();
@@ -396,7 +368,6 @@
 
         let surchargeTableLoaded = false;
 
-        // Toggle surcharge table visibility
         function toggleSurchargeTable() {
             const container = document.getElementById('surchargeTableContainer');
             const btn = document.getElementById('toggleTableBtn');
@@ -405,7 +376,6 @@
                 container.classList.remove('hidden');
                 btn.textContent = 'Ẩn bảng phụ thu';
 
-                // Load data if not loaded yet
                 if (!surchargeTableLoaded) {
                     loadSurchargeTable();
                 }
@@ -415,7 +385,6 @@
             }
         }
 
-        // Load surcharge table data from API
         async function loadSurchargeTable() {
             try {
                 const response = await fetch(`${API_BASE}/get_surcharge_table`);
@@ -440,7 +409,6 @@
             }
         }
 
-        // Render surcharge table
         function renderSurchargeTable(data) {
             const tbody = document.getElementById('surchargeTableBody');
             let html = '';
@@ -466,19 +434,16 @@
             tbody.innerHTML = html;
         }
 
-        // Format number with thousand separator
         function formatNumber(value) {
             if (value === 0) return '0';
             return new Intl.NumberFormat('vi-VN').format(value);
         }
 
         // ============================================================================
-        // TRF_STD Functions - Biểu cước từ SQL Server
+        // TRF_STD Functions
         // ============================================================================
 
-        // Load TRF_STD data on page load
         document.addEventListener('DOMContentLoaded', function() {
-            // Load TRF_STD data after auth check
             setTimeout(() => {
                 if (localStorage.getItem('token')) {
                     loadTrfStdData();
@@ -486,14 +451,12 @@
             }, 500);
         });
 
-        // Load TRF_STD data from API
         async function loadTrfStdData() {
             const loadingEl = document.getElementById('trfStdLoading');
             const errorEl = document.getElementById('trfStdError');
             const contentEl = document.getElementById('trfStdContent');
             const refreshBtn = document.getElementById('refreshTrfBtn');
 
-            // Show loading
             loadingEl.classList.remove('hidden');
             errorEl.classList.add('hidden');
             contentEl.style.opacity = '0.5';
@@ -522,15 +485,12 @@
             }
         }
 
-        // Render TRF_STD data
         function renderTrfStdData(data) {
-            // Container Hàng: lấy từ HH hoặc NH (cả 2 có giá trị giống nhau cho hang_*)
             const hangData = data.HH || data.NH || {};
             document.getElementById('trfHang20').textContent = formatCurrency(hangData.hang_20 || 0);
             document.getElementById('trfHang40').textContent = formatCurrency(hangData.hang_40 || 0);
             document.getElementById('trfHang45').textContent = formatCurrency(hangData.hang_45 || 0);
 
-            // Container Rỗng: lấy từ NR hoặc HR (cả 2 có giá trị giống nhau cho rong_*)
             const rongData = data.NR || data.HR || {};
             document.getElementById('trfRong20').textContent = formatCurrency(rongData.rong_20 || 0);
             document.getElementById('trfRong40').textContent = formatCurrency(rongData.rong_40 || 0);
@@ -541,32 +501,22 @@
         // Update TRF_STD Functions
         // ============================================================================
 
-        // Copy values from fuel price result to update form
         function copyFromResult() {
-            const hang20 = document.getElementById('hang20').textContent;
-            const hang40 = document.getElementById('hang40').textContent;
-            const hang45 = document.getElementById('hang45').textContent;
-            const rong20 = document.getElementById('rong20').textContent;
-            const rong40 = document.getElementById('rong40').textContent;
-            const rong45 = document.getElementById('rong45').textContent;
-
-            // Parse currency values to numbers
             const parseValue = (str) => {
                 if (!str || str === '-') return '';
                 return parseInt(str.replace(/[^0-9]/g, '')) || '';
             };
 
-            document.getElementById('updateHang20').value = parseValue(hang20);
-            document.getElementById('updateHang40').value = parseValue(hang40);
-            document.getElementById('updateHang45').value = parseValue(hang45);
-            document.getElementById('updateRong20').value = parseValue(rong20);
-            document.getElementById('updateRong40').value = parseValue(rong40);
-            document.getElementById('updateRong45').value = parseValue(rong45);
+            document.getElementById('updateHang20').value = parseValue(document.getElementById('hang20').textContent);
+            document.getElementById('updateHang40').value = parseValue(document.getElementById('hang40').textContent);
+            document.getElementById('updateHang45').value = parseValue(document.getElementById('hang45').textContent);
+            document.getElementById('updateRong20').value = parseValue(document.getElementById('rong20').textContent);
+            document.getElementById('updateRong40').value = parseValue(document.getElementById('rong40').textContent);
+            document.getElementById('updateRong45').value = parseValue(document.getElementById('rong45').textContent);
 
             alert('Đã sao chép giá trị từ kết quả tra cứu!');
         }
 
-        // Clear Hang form
         function clearHangForm() {
             document.getElementById('updateHang20').value = '';
             document.getElementById('updateHang40').value = '';
@@ -574,7 +524,6 @@
             hideMessage('hangUpdateMessage');
         }
 
-        // Clear Rong form
         function clearRongForm() {
             document.getElementById('updateRong20').value = '';
             document.getElementById('updateRong40').value = '';
@@ -582,29 +531,23 @@
             hideMessage('rongUpdateMessage');
         }
 
-        // Show message
         function showMessage(elementId, message, isSuccess) {
             const el = document.getElementById(elementId);
             el.textContent = message;
             el.className = `update-message ${isSuccess ? 'success' : 'error'}`;
             el.classList.remove('hidden');
-
-            // Auto hide after 5 seconds
             setTimeout(() => hideMessage(elementId), 5000);
         }
 
-        // Hide message
         function hideMessage(elementId) {
             document.getElementById(elementId).classList.add('hidden');
         }
 
-        // Update TRF_STD for Container Hàng (NH + HH)
         async function updateTrfStdHang() {
             const hang20 = document.getElementById('updateHang20').value;
             const hang40 = document.getElementById('updateHang40').value;
             const hang45 = document.getElementById('updateHang45').value;
 
-            // Validate
             if (!hang20 || !hang40 || !hang45) {
                 showMessage('hangUpdateMessage', 'Vui lòng nhập đầy đủ giá trị!', false);
                 return;
@@ -615,49 +558,19 @@
             btn.textContent = 'Đang cập nhật...';
 
             try {
-                // Update NH
-                const responseNH = await fetch(`${API_BASE}/update_trf_std`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-                    body: JSON.stringify({
-                        trf_code: 'NH',
-                        hang_20: parseFloat(hang20),
-                        hang_40: parseFloat(hang40),
-                        hang_45: parseFloat(hang45)
-                    })
-                });
-
-                if (!responseNH.ok) {
-                    const errData = await responseNH.json();
-                    throw new Error(errData.error || 'Failed to update NH');
-                }
-
-                // Update HH
-                const responseHH = await fetch(`${API_BASE}/update_trf_std`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-                    body: JSON.stringify({
-                        trf_code: 'HH',
-                        hang_20: parseFloat(hang20),
-                        hang_40: parseFloat(hang40),
-                        hang_45: parseFloat(hang45)
-                    })
-                });
-
-                if (!responseHH.ok) {
-                    const errData = await responseHH.json();
-                    throw new Error(errData.error || 'Failed to update HH');
+                for (const trf_code of ['NH', 'HH']) {
+                    const res = await fetch(`${API_BASE}/update_trf_std`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                        body: JSON.stringify({ trf_code, hang_20: parseFloat(hang20), hang_40: parseFloat(hang40), hang_45: parseFloat(hang45) })
+                    });
+                    if (!res.ok) {
+                        const errData = await res.json();
+                        throw new Error(errData.error || `Failed to update ${trf_code}`);
+                    }
                 }
 
                 showMessage('hangUpdateMessage', '✓ Cập nhật NH + HH thành công!', true);
-                
-                // Reload TRF_STD data to reflect changes
                 loadTrfStdData();
 
             } catch (error) {
@@ -669,13 +582,11 @@
             }
         }
 
-        // Update TRF_STD for Container Rỗng (NR + HR)
         async function updateTrfStdRong() {
             const rong20 = document.getElementById('updateRong20').value;
             const rong40 = document.getElementById('updateRong40').value;
             const rong45 = document.getElementById('updateRong45').value;
 
-            // Validate
             if (!rong20 || !rong40 || !rong45) {
                 showMessage('rongUpdateMessage', 'Vui lòng nhập đầy đủ giá trị!', false);
                 return;
@@ -686,49 +597,19 @@
             btn.textContent = 'Đang cập nhật...';
 
             try {
-                // Update NR
-                const responseNR = await fetch(`${API_BASE}/update_trf_std`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-                    body: JSON.stringify({
-                        trf_code: 'NR',
-                        rong_20: parseFloat(rong20),
-                        rong_40: parseFloat(rong40),
-                        rong_45: parseFloat(rong45)
-                    })
-                });
-
-                if (!responseNR.ok) {
-                    const errData = await responseNR.json();
-                    throw new Error(errData.error || 'Failed to update NR');
-                }
-
-                // Update HR
-                const responseHR = await fetch(`${API_BASE}/update_trf_std`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-                    body: JSON.stringify({
-                        trf_code: 'HR',
-                        rong_20: parseFloat(rong20),
-                        rong_40: parseFloat(rong40),
-                        rong_45: parseFloat(rong45)
-                    })
-                });
-
-                if (!responseHR.ok) {
-                    const errData = await responseHR.json();
-                    throw new Error(errData.error || 'Failed to update HR');
+                for (const trf_code of ['NR', 'HR']) {
+                    const res = await fetch(`${API_BASE}/update_trf_std`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                        body: JSON.stringify({ trf_code, rong_20: parseFloat(rong20), rong_40: parseFloat(rong40), rong_45: parseFloat(rong45) })
+                    });
+                    if (!res.ok) {
+                        const errData = await res.json();
+                        throw new Error(errData.error || `Failed to update ${trf_code}`);
+                    }
                 }
 
                 showMessage('rongUpdateMessage', '✓ Cập nhật NR + HR thành công!', true);
-                
-                // Reload TRF_STD data to reflect changes
                 loadTrfStdData();
 
             } catch (error) {

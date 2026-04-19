@@ -19,10 +19,10 @@
 
             <div class="form-group">
                 <label for="username">Tên đăng nhập</label>
-                <input 
-                    type="text" 
-                    id="username" 
-                    name="username" 
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
                     placeholder="Nhập tên đăng nhập"
                     required
                     autocomplete="username"
@@ -31,10 +31,10 @@
 
             <div class="form-group">
                 <label for="password">Mật khẩu</label>
-                <input 
-                    type="password" 
-                    id="password" 
-                    name="password" 
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
                     placeholder="Nhập mật khẩu"
                     required
                     autocomplete="current-password"
@@ -60,28 +60,21 @@
         let API_URL = '/api';
         API_URL = window.API_URL || API_URL;
 
-        // Check if already logged in
         document.addEventListener('DOMContentLoaded', function() {
             const token = localStorage.getItem('token');
             if (token) {
-                // Verify token is still valid
                 verifyToken(token);
             }
         });
 
-        // Verify token
         async function verifyToken(token) {
             try {
                 const response = await fetch(`${API_URL}/me`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.ok) {
-                    // Token valid, redirect to main page
                     window.location.href = '/';
                 } else {
-                    // Token invalid, remove it
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
                 }
@@ -90,20 +83,17 @@
             }
         }
 
-        // Show message
         function showMessage(message, type) {
             const messageBox = document.getElementById('messageBox');
             messageBox.textContent = message;
             messageBox.className = `message ${type}`;
         }
 
-        // Hide message
         function hideMessage() {
             const messageBox = document.getElementById('messageBox');
             messageBox.className = 'message';
         }
 
-        // Handle form submit
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
@@ -117,7 +107,6 @@
                 return;
             }
 
-            // Disable button and show loading
             btnLogin.disabled = true;
             btnLogin.innerHTML = '<span class="loading"></span>Đang đăng nhập...';
             hideMessage();
@@ -125,9 +114,7 @@
             try {
                 const response = await fetch(`${API_URL}/login`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
                 });
 
@@ -135,16 +122,14 @@
 
                 if (response.ok && data.success) {
                     showMessage('Đăng nhập thành công! Đang chuyển hướng...', 'success');
-                    
-                    // Save token and user info
+
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('user', JSON.stringify(data.user));
-                    
+
                     if (remember) {
                         localStorage.setItem('rememberLogin', 'true');
                     }
 
-                    // Redirect after 1 second
                     setTimeout(() => {
                         window.location.href = '/';
                     }, 1000);
@@ -163,7 +148,6 @@
             }
         });
 
-        // Allow Enter key to submit
         document.querySelectorAll('input').forEach(input => {
             input.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
@@ -171,7 +155,7 @@
                 }
             });
         });
-        
+
     </script>
 </body>
 </html>

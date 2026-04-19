@@ -1,10 +1,9 @@
-const path = require('path');
 const { sqlite_db } = require('../config/db');
 const { activeTokens, generateToken } = require('../middleware/auth');
 const userModel = require('../models/user.model');
 
 function getLoginPage(req, res) {
-    res.sendFile(path.join(__dirname, '../../view/login.html'));
+    res.render('login');
 }
 
 async function login(req, res) {
