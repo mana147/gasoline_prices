@@ -10,21 +10,27 @@
 
 <body>
     <div class="container">
-        <div class="header">
-            <div class="icon"> <img src="/logo.png" alt="logo"> </div>
-        </div>
+        <header class="page-header">
+            <div class="brand">
+                <div class="icon"><img src="/logo.png" alt="logo"></div>
+                <div class="brand-content">
+                    <h1 class="brand-title">MPC Fuel Service</h1>
+                </div>
+            </div>
+            <p class="page-description">Chọn ngày để lấy dữ liệu giá dầu chính xác và tính toán phụ thu theo bảng hiện hành.</p>
+        </header>
 
-        <div class="card">
+        <section class="card">
             <div class="form-group">
                 <div>
-                    <label for="dateInput">📋 Chọn ngày:</label>
+                    <label for="dateInput">📋 Chọn ngày</label>
                     <input type="date" id="dateInput">
                 </div>
                 <button class="btn" id="fetchBtn" onclick="fetchFuelPrice()">
                     Tra cứu giá xăng dầu
                 </button>
             </div>
-        </div>
+        </section>
 
         <div id="loadingSection" class="card hidden">
             <div class="loading">
