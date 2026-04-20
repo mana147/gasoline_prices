@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Config ZKTeco - MPC Service</title>
+    <link rel="stylesheet" href="/css/zkteco.css">
+</head>
+<body>
+
+    <header class="page-header">
+        <a href="/menu" class="btn-back">← Menu</a>
+        <div class="header-title">
+            <h1>🕐 Config máy chấm công ZKTeco</h1>
+            <p>Quản lý cấu hình thiết bị chấm công trong hệ thống</p>
+        </div>
+        <div class="header-user" id="headerUser"></div>
+    </header>
+
+    <main class="main-container">
+
+        <!-- Form thêm / sửa thiết bị -->
+        <div class="card">
+            <div class="card-title">➕ <span id="formTitle">Thêm thiết bị mới</span></div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Tên thiết bị *</label>
+                    <input type="text" id="fName" placeholder="VD: Máy chấm công VP">
+                </div>
+                <div class="form-group">
+                    <label>Địa chỉ IP *</label>
+                    <input type="text" id="fIp" placeholder="192.168.1.201">
+                </div>
+                <div class="form-group">
+                    <label>Port</label>
+                    <input type="number" id="fPort" placeholder="4370" value="4370">
+                </div>
+                <div class="form-group">
+                    <label>Timeout (ms)</label>
+                    <input type="number" id="fTimeout" placeholder="5000" value="5000">
+                </div>
+                <div class="form-group">
+                    <label>Vị trí</label>
+                    <input type="text" id="fLocation" placeholder="VD: Tầng 1 - Cổng vào">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary" id="btnSubmit" onclick="submitForm()">Thêm thiết bị</button>
+                <button class="btn btn-secondary hidden" id="btnCancel" onclick="cancelEdit()">Hủy</button>
+            </div>
+            <div id="formMessage" class="message hidden"></div>
+        </div>
+
+        <!-- Danh sách thiết bị -->
+        <div class="card">
+            <div class="table-header">
+                <div class="card-title" style="margin-bottom:0">🖥️ Danh sách thiết bị</div>
+                <button class="btn btn-secondary btn-sm" onclick="loadDevices()">🔄 Làm mới</button>
+            </div>
+            <div id="deviceListMsg" class="message hidden"></div>
+            <div id="deviceContainer">
+                <div class="empty-state">
+                    <span style="font-size:2rem">🖥️</span>
+                    <p>Đang tải danh sách thiết bị...</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const API = (path, opts = {}) => {
+            const token = localStorage.getItem('token');
+            return fetch(path, {
+                ...opts,
+                headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', ...(opts.headers || {}) }
+            });
+        };
+
+        function showMsg(id, text, type) {
+            const el = document.getElementById(id);
+            el.className = 'message ' + type;
+            el.textContent = text;
+        }
+        function hideMsg(id) {
+            const el = document.getElementById(id);
+            el.className = 'message hidden';
+        }
+
+        let editingId = null;
+
+        function cancelEdit() {
+            editingId = null;
+            document.getElementById('formTitle').textContent = 'Thêm thiết bị mới';
+            document.getElementById('btnSubmit').textContent = 'Thêm thiết bị';
+            document.getElementById('btnCancel').classList.add('hidden');
+            ['fName','fIp','fPort','fTimeout','fLocation'].forEach(id => {
+                document.getElementById(id).value = id === 'fPort' ? '4370' : id === 'fTimeout' ? '5000' : '';
+            });
+            hideMsg('formMessage');
+        }
+
+        function startEdit(device) {
+            editingId = device.id;
+            document.getElementById('formTitle').textContent = 'Cập nhật thiết bị';
+            document.getElementById('btnSubmit').textContent = 'Lưu thay đổi';
+            document.getElementById('btnCancel').classList.remove('hidden');
+            document.getElementById('fName').value = device.name || '';
+            document.getElementById('fIp').value = device.ip || '';
+            document.getElementById('fPort').value = device.port || 4370;
+            document.getElementById('fTimeout').value = device.timeout || 5000;
+            document.getElementById('fLocation').value = device.location || '';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function submitForm() {
+            const body = {
+                name: document.getElementById('fName').value.trim(),
+                ip: document.getElementById('fIp').value.trim(),
+                port: parseInt(document.getElementById('fPort').value) || 4370,
+                timeout: parseInt(document.getElementById('fTimeout').value) || 5000,
+                location: document.getElementById('fLocation').value.trim() || null
+            };
+
+            hideMsg('formMessage');
+            const btn = document.getElementById('btnSubmit');
+            btn.disabled = true;
+
+            try {
+                let res;
+                if (editingId) {
+                    res = await API(`/api/zkteco/devices/${editingId}`, { method: 'PUT', body: JSON.stringify(body) });
+                } else {
+                    res = await API('/api/zkteco/devices', { method: 'POST', body: JSON.stringify(body) });
+                }
+                const data = await res.json();
+                if (data.success) {
+                    showMsg('formMessage', data.message, 'success');
+                    cancelEdit();
+                    loadDevices();
+                } else {
+                    showMsg('formMessage', data.error || 'Lỗi không xác định', 'error');
+                }
+            } catch (e) {
+                showMsg('formMessage', 'Lỗi kết nối server', 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function deleteDevice(id, name) {
+            if (!confirm(`Xóa thiết bị "${name}"?\nThao tác này không thể hoàn tác.`)) return;
+            try {
+                const res = await API(`/api/zkteco/devices/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    showMsg('deviceListMsg', 'Đã xóa thiết bị thành công', 'success');
+                    loadDevices();
+                } else {
+                    showMsg('deviceListMsg', data.error || 'Lỗi xóa thiết bị', 'error');
+                }
+            } catch (e) {
+                showMsg('deviceListMsg', 'Lỗi kết nối server', 'error');
+            }
+        }
+
+        async function testDevice(id) {
+            const resultEl = document.getElementById('testResult_' + id);
+            resultEl.innerHTML = '<div class="inline-panel info">⏳ Đang kết nối...</div>';
+
+            try {
+                const res = await API(`/api/zkteco/devices/${id}/test`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    resultEl.innerHTML = `
+                        <div class="inline-panel success-panel">
+                            <strong style="color:var(--success)">✅ Kết nối thành công</strong>
+                            <div class="info-grid">
+                                <div class="info-row"><span class="info-label">Tên máy</span><span class="info-value">${data.deviceName || '—'}</span></div>
+                                <div class="info-row"><span class="info-label">Serial</span><span class="info-value">${data.serialNumber || '—'}</span></div>
+                                <div class="info-row"><span class="info-label">Firmware</span><span class="info-value">${data.firmware || '—'}</span></div>
+                            </div>
+                        </div>`;
+                } else {
+                    resultEl.innerHTML = `<div class="inline-panel error-panel">❌ ${data.error}</div>`;
+                }
+            } catch (e) {
+                resultEl.innerHTML = `<div class="inline-panel error-panel">❌ Lỗi kết nối server</div>`;
+            }
+        }
+
+        function toggleSetTime(id) {
+            const panel = document.getElementById('setTimePanel_' + id);
+            panel.classList.toggle('hidden');
+        }
+
+        async function submitSetTime(id) {
+            const input = document.getElementById('setTimeInput_' + id);
+            const resultEl = document.getElementById('setTimeResult_' + id);
+            if (!input.value) {
+                resultEl.innerHTML = '<div class="inline-panel error-panel">Vui lòng chọn ngày giờ</div>';
+                return;
+            }
+            // datetime-local trả về "YYYY-MM-DDTHH:MM", chuyển sang "YYYY-MM-DD HH:MM:SS"
+            const datetime = input.value.replace('T', ' ') + ':00';
+
+            const btn = document.getElementById('btnSetTime_' + id);
+            btn.disabled = true;
+            resultEl.innerHTML = '<div class="inline-panel">⏳ Đang đặt giờ...</div>';
+
+            try {
+                const res = await API(`/api/zkteco/devices/${id}/set-time`, {
+                    method: 'POST',
+                    body: JSON.stringify({ datetime })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    resultEl.innerHTML = `<div class="inline-panel success-panel">✅ Đã đặt giờ: <strong>${data.datetime}</strong></div>`;
+                } else {
+                    resultEl.innerHTML = `<div class="inline-panel error-panel">❌ ${data.error}</div>`;
+                }
+            } catch (e) {
+                resultEl.innerHTML = `<div class="inline-panel error-panel">❌ Lỗi kết nối server</div>`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function syncTime(id, name) {
+            if (!confirm(`Đồng bộ thời gian máy chấm công "${name}" với giờ server hiện tại?`)) return;
+            const resultEl = document.getElementById('testResult_' + id);
+            resultEl.innerHTML = '<div class="inline-panel">⏳ Đang đồng bộ...</div>';
+
+            try {
+                const res = await API(`/api/zkteco/devices/${id}/sync-time`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    const synced = new Date(data.syncedAt).toLocaleString('vi-VN');
+                    resultEl.innerHTML = `<div class="inline-panel success-panel">✅ Đồng bộ thành công lúc <strong>${synced}</strong></div>`;
+                } else {
+                    resultEl.innerHTML = `<div class="inline-panel error-panel">❌ ${data.error}</div>`;
+                }
+            } catch (e) {
+                resultEl.innerHTML = `<div class="inline-panel error-panel">❌ Lỗi kết nối server</div>`;
+            }
+        }
+
+        function renderDevices(devices) {
+            const container = document.getElementById('deviceContainer');
+            if (!devices.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <span style="font-size:2rem">🖥️</span>
+                        <p>Chưa có thiết bị nào. Thêm thiết bị đầu tiên ở trên.</p>
+                    </div>`;
+                return;
+            }
+
+            const rows = devices.map(d => `
+                <tr>
+                    <td>
+                        <div class="device-name">${escHtml(d.name)}</div>
+                        ${d.location ? `<div class="device-loc">${escHtml(d.location)}</div>` : ''}
+                    </td>
+                    <td><span class="device-ip">${escHtml(d.ip)}</span></td>
+                    <td>${d.port}</td>
+                    <td>${d.timeout}ms</td>
+                    <td><span class="badge badge-${d.status === 'active' ? 'active' : 'inactive'}">${d.status === 'active' ? 'Hoạt động' : 'Tắt'}</span></td>
+                    <td>
+                        <div class="action-group">
+                            <button class="btn btn-secondary btn-sm" onclick="testDevice(${d.id})">🔌 Kiểm tra</button>
+                            <button class="btn btn-secondary btn-sm" onclick="toggleSetTime(${d.id})">🕐 Đặt giờ</button>
+                            <button class="btn btn-secondary btn-sm" onclick="syncTime(${d.id}, '${escHtml(d.name).replace(/'/g,"\\'")}')">⟳ Đồng bộ giờ</button>
+                            <button class="btn btn-secondary btn-sm" onclick='startEdit(${JSON.stringify(d)})'>✏️ Sửa</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteDevice(${d.id}, '${escHtml(d.name).replace(/'/g,"\\'")}')">🗑️ Xóa</button>
+                        </div>
+
+                        <!-- Set time panel -->
+                        <div id="setTimePanel_${d.id}" class="settime-panel hidden">
+                            <input type="datetime-local" id="setTimeInput_${d.id}">
+                            <button class="btn btn-primary btn-sm" id="btnSetTime_${d.id}" onclick="submitSetTime(${d.id})">Xác nhận</button>
+                            <button class="btn btn-secondary btn-sm" onclick="toggleSetTime(${d.id})">Hủy</button>
+                            <div id="setTimeResult_${d.id}"></div>
+                        </div>
+
+                        <!-- Test / sync result -->
+                        <div id="testResult_${d.id}"></div>
+                    </td>
+                </tr>
+            `).join('');
+
+            container.innerHTML = `
+                <table class="device-table">
+                    <thead>
+                        <tr>
+                            <th>Tên thiết bị</th>
+                            <th>Địa chỉ IP</th>
+                            <th>Port</th>
+                            <th>Timeout</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>`;
+        }
+
+        function escHtml(str) {
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        async function loadDevices() {
+            hideMsg('deviceListMsg');
+            try {
+                const res = await API('/api/zkteco/devices');
+                if (res.status === 401 || res.status === 403) {
+                    window.location.href = '/login';
+                    return;
+                }
+                const data = await res.json();
+                if (data.success) renderDevices(data.devices);
+                else showMsg('deviceListMsg', data.error || 'Lỗi tải danh sách', 'error');
+            } catch (e) {
+                showMsg('deviceListMsg', 'Lỗi kết nối server', 'error');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            const token = localStorage.getItem('token');
+            if (!token) { window.location.href = '/login'; return; }
+
+            try {
+                const res = await fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } });
+                if (!res.ok) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    window.location.href = '/login';
+                    return;
+                }
+                const data = await res.json();
+                if (data.user && data.user.role !== 'admin') {
+                    alert('Tính năng này chỉ dành cho Admin.');
+                    window.location.href = '/menu';
+                    return;
+                }
+                const user = data.user || {};
+                document.getElementById('headerUser').textContent = (user.full_name || user.username || '') + ' (Admin)';
+            } catch (e) {
+                window.location.href = '/login';
+                return;
+            }
+
+            loadDevices();
+        });
+    </script>
+
+</body>
+</html>

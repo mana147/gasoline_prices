@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const authRouter = require('./routes/auth.routes');
 const fuelRouter = require('./routes/fuel.routes');
 const rateRouter = require('./routes/rate.routes');
+const zktecoRouter = require('./routes/zkteco.routes');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -28,6 +29,9 @@ app.get('/menu', (req, res) => {
 app.use('/', authRouter);
 app.use('/', fuelRouter);
 app.use('/', rateRouter);
+app.use('/', zktecoRouter);
+
+app.get('/zkteco', (_req, res) => res.render('zkteco'));
 
 app.use(errorHandler);
 

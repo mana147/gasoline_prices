@@ -3,7 +3,11 @@
     "allow": [
       "Bash(grep -E \"\\\\.\\(js|json|sh|sql\\)$\")",
       "Bash(node -e \"require\\('./src/app'\\)\")",
-      "Bash(node -e \"const app = require\\('./src/app'\\); console.log\\('App loaded OK'\\);\")"
+      "Bash(node -e \"const app = require\\('./src/app'\\); console.log\\('App loaded OK'\\);\")",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(npm install *)"
     ]
   }
 }

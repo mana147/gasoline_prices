@@ -37,21 +37,25 @@ gasoline_prices/
 │   ├── routes/
 │   │   ├── auth.routes.js           # Routes: /login, /api/login, /api/users, ...
 │   │   ├── fuel.routes.js           # Routes: /api/get_fuel_price, /api/get_surcharge_table
-│   │   └── rate.routes.js           # Routes: /api/get_trf_std, /api/update_trf_std
+│   │   ├── rate.routes.js           # Routes: /api/get_trf_std, /api/update_trf_std
+│   │   └── zkteco.routes.js         # Routes: /api/zkteco/devices (CRUD) + /test + /set-time + /sync-time
 │   │
 │   ├── controllers/
 │   │   ├── auth.controller.js       # Handlers: login, logout, register, user CRUD; render login.ejs
 │   │   ├── fuel.controller.js       # Handlers: getFuelPrice, getSurchargeTable
-│   │   └── rate.controller.js       # Handlers: getTrfStd, updateTrfStd
+│   │   ├── rate.controller.js       # Handlers: getTrfStd, updateTrfStd
+│   │   └── zkteco.controller.js     # Handlers: getDevices, addDevice, editDevice, removeDevice, testConnection, setTime, syncTime
 │   │
 │   ├── services/
 │   │   ├── fuel.service.js          # Logic: gọi API ngoài + tính 6 loại container
-│   │   └── rate.service.js          # Logic: đọc/cập nhật TRF_STD, validate trf_code
+│   │   ├── rate.service.js          # Logic: đọc/cập nhật TRF_STD, validate trf_code
+│   │   └── zkteco.service.js        # Logic: CRUD validate, ZKTeco socket connection, đặt/đồng bộ giờ
 │   │
 │   ├── models/
 │   │   ├── user.model.js            # SQLite: CRUD bảng users (8 hàm promisified)
 │   │   ├── fuelPrice.model.js       # SQLite: INSERT/SELECT bảng fuel_prices
-│   │   └── rate.model.js            # SQL Server: SELECT/UPDATE bảng TRF_STD
+│   │   ├── rate.model.js            # SQL Server: SELECT/UPDATE bảng TRF_STD
+│   │   └── zkteco.model.js          # SQLite: CRUD bảng zkteco_devices (5 hàm promisified)
 │   │
 │   ├── middleware/
 │   │   ├── auth.js                  # Token store (Map), generateToken, authMiddleware, adminMiddleware
@@ -63,13 +67,15 @@ gasoline_prices/
 │   └── views/                       # EJS templates (thay thế view/ tĩnh cũ)
 │       ├── index.ejs                # Tool MPC Fuel Service (date picker → fetch → hiển thị phụ thu)
 │       ├── menu.ejs                 # Trang menu trung gian sau đăng nhập (chọn tool)
-│       └── login.ejs                # Trang đăng nhập
+│       ├── login.ejs                # Trang đăng nhập
+│       └── zkteco.ejs               # Config máy chấm công ZKTeco (device CRUD + đặt/đồng bộ giờ)
 │
 ├── public/
 │   ├── css/
 │   │   ├── index.css
 │   │   ├── login.css
-│   │   └── menu.css                 # Styles cho trang menu tool
+│   │   ├── menu.css                 # Styles cho trang menu tool
+│   │   └── zkteco.css               # Styles cho trang ZKTeco
 │   └── logo.png
 │
 └── database/
@@ -142,6 +148,14 @@ POST /api/update_trf_std  { trf_code: "NH", hang_20, hang_40, hang_45 }
 | GET | `/api/get_surcharge_table` | — | — | Bảng phụ thu (10 mức giá) |
 | GET | `/api/get_trf_std` | ✓ | user | Biểu cước hiện tại từ SQL Server |
 | POST | `/api/update_trf_std` | ✓ | admin | Cập nhật biểu cước SQL Server |
+| GET | `/zkteco` | — | — | Render zkteco.ejs (admin check ở client) |
+| GET | `/api/zkteco/devices` | ✓ | admin | Danh sách thiết bị ZKTeco |
+| POST | `/api/zkteco/devices` | ✓ | admin | Thêm thiết bị ZKTeco |
+| PUT | `/api/zkteco/devices/:id` | ✓ | admin | Cập nhật thiết bị |
+| DELETE | `/api/zkteco/devices/:id` | ✓ | admin | Xóa thiết bị |
+| POST | `/api/zkteco/devices/:id/test` | ✓ | admin | Kiểm tra kết nối, lấy thông tin máy |
+| POST | `/api/zkteco/devices/:id/set-time` | ✓ | admin | Đặt giờ cho thiết bị (YYYY-MM-DD HH:MM:SS) |
+| POST | `/api/zkteco/devices/:id/sync-time` | ✓ | admin | Đồng bộ giờ thiết bị với server |
 
 ---
 
@@ -175,6 +189,19 @@ POST /api/update_trf_std  { trf_code: "NH", hang_20, hang_40, hang_45 }
 | created_at | TEXT | ISO timestamp |
 | updated_at | TEXT | ISO timestamp |
 | last_login | TEXT | ISO timestamp |
+
+**Bảng `zkteco_devices`**
+| Cột | Kiểu | Mô tả |
+|-----|------|-------|
+| id | INTEGER | Primary key |
+| name | TEXT | Tên thiết bị |
+| ip | TEXT | Địa chỉ IP |
+| port | INTEGER | Port (default 4370) |
+| timeout | INTEGER | Timeout ms (default 5000) |
+| location | TEXT | Vị trí đặt máy |
+| status | TEXT | `active` hoặc `inactive` |
+| created_at | TEXT | ISO timestamp |
+| updated_at | TEXT | ISO timestamp |
 
 ### SQL Server — `PRD_MPC`
 
@@ -235,6 +262,7 @@ MSSQL_TRUST_SERVER_CERTIFICATE=true
 | dotenv | ^17.3.1 | Load biến môi trường |
 | cors | ^2.8.5 | Cross-origin |
 | body-parser | ^1.20.3 | Parse JSON body |
+| zkteco-js | ^1.7.0 | Giao tiếp thiết bị chấm công ZKTeco qua TCP/UDP |
 
 ---
 

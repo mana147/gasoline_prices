@@ -61,6 +61,14 @@ src/
 
 Token-based, in-memory. Tokens are lost on server restart. Admin role is required for `POST /api/update_trf_std`, `GET /api/users`, and `DELETE /api/users/:id`.
 
+## Maintaining Feature Map
+
+**REQUIRED**: Mỗi khi thêm hoặc sửa đổi tính năng, bắt buộc phải cập nhật thư mục `feature_map/`:
+- **Thêm tính năng mới**: Tạo file `feature_map/<TEN_TINH_NANG>_FEATURE_MAP.md` mới, theo đúng cấu trúc của các file hiện có trong `feature_map/` (tổng quan, bản đồ file, API endpoints, request flow, v.v.).
+- **Sửa đổi hoặc nâng cấp tính năng hiện có**: Cập nhật file `feature_map/` tương ứng để phản ánh đúng thay đổi — không được để file map lỗi thời.
+
+Thực hiện trong cùng một task — không được trì hoãn.
+
 ## Maintaining PROJECT_STRUCTURE.md
 
 **REQUIRED**: Whenever you add, remove, or rename any file or directory in this project, you MUST update [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) to reflect the change. This includes:
