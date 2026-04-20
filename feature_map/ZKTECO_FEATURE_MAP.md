@@ -8,12 +8,14 @@ Tài liệu này mô tả toàn bộ phạm vi tác động của tính năng **
 
 | Mục | Nội dung |
 |-----|---------|
-| Tên tính năng | Config máy chấm công ZKTeco |
-| Route UI | `GET /zkteco` |
+| Tên tính năng | Config máy chấm công ZKTeco + Quản lý nhân viên |
+| Route UI (danh sách) | `GET /zkteco` |
+| Route UI (chi tiết) | `GET /zkteco/devices/:id` |
 | Phân quyền | Admin only (tất cả API đều yêu cầu `authMiddleware + adminMiddleware`) |
 | Thư viện ngoài | [`zkteco-js`](https://github.com/coding-libs/zkteco-js) v1.7.0 |
-| Database | SQLite — bảng `zkteco_devices` |
+| Database | SQLite — bảng `zkteco_devices` + `zkteco_employees` |
 | Giao thức kết nối máy | TCP socket (IP + port 4370) |
+| Chiến lược nhân viên | Cache SQLite — chỉ kết nối máy khi sync/thêm/xóa |
 
 ---
 
@@ -23,31 +25,39 @@ Tài liệu này mô tả toàn bộ phạm vi tác động của tính năng **
 
 ```
 gasoline_prices/
+├── scripts/
+│   └── test_zkteco_users.js          ← Script test lấy danh sách nhân viên từ máy ZKTeco
+│
 ├── src/
 │   ├── routes/
-│   │   └── zkteco.routes.js          ← 7 API endpoints, tất cả admin-only
+│   │   └── zkteco.routes.js          ← 12 routes: 7 thiết bị + 1 view detail + 4 employee API
 │   ├── controllers/
-│   │   └── zkteco.controller.js      ← 7 handlers: getDevices, addDevice, editDevice,
-│   │                                    removeDevice, testConnection, setTime, syncTime
+│   │   └── zkteco.controller.js      ← 12 handlers (thêm: renderDeviceDetail, getEmployees,
+│   │                                    syncEmployees, createEmployee, deleteEmployee)
 │   ├── services/
-│   │   └── zkteco.service.js         ← Business logic: CRUD validate + giao tiếp ZKTeco
+│   │   └── zkteco.service.js         ← Thêm: getEmployees, syncEmployees, createEmployee,
+│   │                                    deleteEmployee, _validateEmployee
 │   ├── models/
-│   │   └── zkteco.model.js           ← SQLite CRUD bảng zkteco_devices (5 hàm promisified)
+│   │   ├── zkteco.model.js           ← SQLite CRUD bảng zkteco_devices (5 hàm promisified)
+│   │   └── zkEmployee.model.js       ← SQLite CRUD bảng zkteco_employees (5 hàm promisified)
 │   └── views/
-│       └── zkteco.ejs                ← UI: form thêm máy + bảng danh sách + actions
+│       ├── zkteco.ejs                ← UI: danh sách thiết bị (Sửa/Xóa + link sang detail)
+│       └── zkteco_device.ejs         ← UI: chi tiết thiết bị (kết nối + thời gian + nhân viên)
 │
 └── public/
     └── css/
-        └── zkteco.css                ← Dark theme styles cho trang ZKTeco
+        ├── zkteco.css                ← Dark theme styles cho trang danh sách
+        └── zkteco_device.css         ← Dark theme styles cho trang chi tiết
 ```
 
 ### File được sửa
 
 | File | Thay đổi |
 |------|---------|
-| `src/config/db.js` | Thêm `CREATE TABLE IF NOT EXISTS zkteco_devices` trong `db.serialize()` sau khi mở SQLite |
+| `src/config/db.js` | Thêm `CREATE TABLE IF NOT EXISTS zkteco_devices` + `zkteco_employees` |
 | `src/app.js` | Import `zktecoRouter`; mount `app.use('/', zktecoRouter)`; thêm view route `GET /zkteco` |
 | `src/views/menu.ejs` | Card "Coming Soon" → card active với link `href="/zkteco"` |
+| `src/views/zkteco.ejs` | Tên thiết bị → link `/zkteco/devices/:id`; bỏ nút Kiểm tra/Đặt giờ/Đồng bộ giờ |
 | `PROJECT_STRUCTURE.md` | Cập nhật cây thư mục, bảng API, Databases, Dependencies |
 | `package.json` | Thêm dependency `zkteco-js ^1.7.0` |
 
@@ -55,9 +65,9 @@ gasoline_prices/
 
 ## Database — SQLite
 
-### Bảng `zkteco_devices`
+> Tất cả bảng được tạo tự động tại startup (`src/config/db.js`) bằng `CREATE TABLE IF NOT EXISTS`.
 
-> Được tạo tự động tại startup (`src/config/db.js`) bằng `CREATE TABLE IF NOT EXISTS`.
+### Bảng `zkteco_devices`
 
 | Cột | Kiểu | Default | Mô tả |
 |-----|------|---------|-------|
@@ -73,21 +83,49 @@ gasoline_prices/
 
 **Không có quan hệ foreign key** với bảng khác. Bảng độc lập.
 
+### Bảng `zkteco_employees`
+
+| Cột | Kiểu | Default | Mô tả |
+|-----|------|---------|-------|
+| `id` | INTEGER | PK AUTOINCREMENT | Primary key |
+| `device_id` | INTEGER | — | FK → zkteco_devices.id |
+| `uid` | INTEGER | — | Slot ID trên máy (1–3000) |
+| `user_id` | TEXT | `''` | Mã nhân viên (max 9 ký tự) |
+| `name` | TEXT | `''` | Họ tên (max 24 ký tự) |
+| `role` | INTEGER | 0 | 0=user, 14=admin |
+| `password` | TEXT | `''` | Mật khẩu (max 8 ký tự) |
+| `cardno` | INTEGER | 0 | Số thẻ RF |
+| `synced_at` | TEXT | — | ISO 8601 timestamp lần sync gần nhất |
+
+**Ràng buộc:** `UNIQUE(device_id, uid)` — mỗi uid chỉ có 1 bản trên 1 máy.
+
 ---
 
 ## API Endpoints
 
+### Thiết bị (Device CRUD + kết nối)
+
 | Method | Route | Handler | Mô tả |
 |--------|-------|---------|-------|
+| `GET` | `/zkteco/devices/:id` | `renderDeviceDetail` | Render trang chi tiết thiết bị (SSR) |
 | `GET` | `/api/zkteco/devices` | `getDevices` | Danh sách tất cả thiết bị |
 | `POST` | `/api/zkteco/devices` | `addDevice` | Thêm thiết bị mới |
 | `PUT` | `/api/zkteco/devices/:id` | `editDevice` | Cập nhật thiết bị |
 | `DELETE` | `/api/zkteco/devices/:id` | `removeDevice` | Xóa thiết bị |
-| `POST` | `/api/zkteco/devices/:id/test` | `testConnection` | Kết nối thật đến máy, trả `deviceName / serialNumber / firmware` |
-| `POST` | `/api/zkteco/devices/:id/set-time` | `setTime` | Đặt giờ cho máy theo `{ datetime: "YYYY-MM-DD HH:MM:SS" }` |
-| `POST` | `/api/zkteco/devices/:id/sync-time` | `syncTime` | Đồng bộ giờ máy = `new Date()` của server |
+| `POST` | `/api/zkteco/devices/:id/test` | `testConnection` | Kết nối thật → trả `deviceName / serialNumber / firmware` |
+| `POST` | `/api/zkteco/devices/:id/set-time` | `setTime` | Đặt giờ máy theo `{ datetime: "YYYY-MM-DD HH:MM:SS" }` |
+| `POST` | `/api/zkteco/devices/:id/sync-time` | `syncTime` | Đồng bộ giờ máy = `new Date()` server |
 
-**Auth header tất cả endpoints:** `Authorization: Bearer <token>`
+### Nhân viên (Employee — SQLite-cached)
+
+| Method | Route | Handler | Mô tả |
+|--------|-------|---------|-------|
+| `GET` | `/api/zkteco/devices/:id/employees` | `getEmployees` | Danh sách nhân viên từ SQLite (không kết nối máy) |
+| `POST` | `/api/zkteco/devices/:id/employees/sync` | `syncEmployees` | `getUsers()` từ máy → upsert SQLite |
+| `POST` | `/api/zkteco/devices/:id/employees` | `createEmployee` | `setUser()` lên máy → insert SQLite |
+| `DELETE` | `/api/zkteco/devices/:id/employees/:uid` | `deleteEmployee` | `deleteUser()` từ máy → delete SQLite |
+
+**Auth header tất cả API endpoints:** `Authorization: Bearer <token>`
 
 ---
 
@@ -117,6 +155,51 @@ Client
       → device.getDeviceName() / .setTime(date)  ← giao tiếp ZKTeco protocol
       → device.disconnect()            ← luôn chạy trong finally{}
   → res.json({ success, ... })
+```
+
+### Hiển thị nhân viên (đọc SQLite)
+```
+Client (zkteco_device.ejs — page load)
+  → GET /api/zkteco/devices/:id/employees
+  → zkteco.routes.js  [authMiddleware → adminMiddleware]
+  → zkteco.controller.getEmployees
+  → zkteco.service.getEmployees(deviceId)
+  → zkEmployee.model.getAllByDevice(db, deviceId)  ← SELECT SQLite, không kết nối máy
+  → res.json({ employees })
+```
+
+### Đồng bộ nhân viên từ máy
+```
+Client (click "Đồng bộ từ máy")
+  → POST /api/zkteco/devices/:id/employees/sync
+  → zkteco.service.syncEmployees(deviceId)
+      → _connectDevice → device.getUsers()   ← TCP connect
+      → zkEmployee.model.upsertMany(db, deviceId, users)  ← INSERT OR REPLACE SQLite
+      → device.disconnect()
+  → res.json({ success, count, syncedAt })
+```
+
+### Thêm nhân viên mới
+```
+Client (form thêm nhân viên)
+  → POST /api/zkteco/devices/:id/employees  { uid, userId, name, password, role, cardno }
+  → zkteco.service.createEmployee(deviceId, fields)
+      → _validateEmployee (uid 1-3000, userId max 9, name max 24, password max 8)
+      → _connectDevice → device.setUser(uid, userId, name, password, role, cardno)
+      → zkEmployee.model.insert(db, deviceId, employee)
+      → device.disconnect()
+  → res.json({ success })
+```
+
+### Xóa nhân viên
+```
+Client (click Xóa)
+  → DELETE /api/zkteco/devices/:id/employees/:uid
+  → zkteco.service.deleteEmployee(deviceId, uid)
+      → _connectDevice → device.deleteUser(uid)
+      → zkEmployee.model.deleteOne(db, deviceId, uid)
+      → device.disconnect()
+  → res.json({ success })
 ```
 
 ---

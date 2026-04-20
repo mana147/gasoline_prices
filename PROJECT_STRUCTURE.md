@@ -55,7 +55,8 @@ gasoline_prices/
 │   │   ├── user.model.js            # SQLite: CRUD bảng users (8 hàm promisified)
 │   │   ├── fuelPrice.model.js       # SQLite: INSERT/SELECT bảng fuel_prices
 │   │   ├── rate.model.js            # SQL Server: SELECT/UPDATE bảng TRF_STD
-│   │   └── zkteco.model.js          # SQLite: CRUD bảng zkteco_devices (5 hàm promisified)
+│   │   ├── zkteco.model.js          # SQLite: CRUD bảng zkteco_devices (5 hàm promisified)
+│   │   └── zkEmployee.model.js      # SQLite: CRUD bảng zkteco_employees (5 hàm promisified)
 │   │
 │   ├── middleware/
 │   │   ├── auth.js                  # Token store (Map), generateToken, authMiddleware, adminMiddleware
@@ -68,15 +69,20 @@ gasoline_prices/
 │       ├── index.ejs                # Tool MPC Fuel Service (date picker → fetch → hiển thị phụ thu)
 │       ├── menu.ejs                 # Trang menu trung gian sau đăng nhập (chọn tool)
 │       ├── login.ejs                # Trang đăng nhập
-│       └── zkteco.ejs               # Config máy chấm công ZKTeco (device CRUD + đặt/đồng bộ giờ)
+│       ├── zkteco.ejs               # Danh sách thiết bị ZKTeco (CRUD thiết bị)
+│       └── zkteco_device.ejs        # Chi tiết thiết bị: kết nối, thời gian, quản lý nhân viên
 │
 ├── public/
 │   ├── css/
 │   │   ├── index.css
 │   │   ├── login.css
 │   │   ├── menu.css                 # Styles cho trang menu tool
-│   │   └── zkteco.css               # Styles cho trang ZKTeco
+│   │   ├── zkteco.css               # Styles cho trang danh sách thiết bị ZKTeco
+│   │   └── zkteco_device.css        # Styles cho trang chi tiết thiết bị ZKTeco
 │   └── logo.png
+│
+├── scripts/
+│   └── test_zkteco_users.js         # Script test lấy danh sách user từ máy ZKTeco
 │
 └── database/
     └── fuel_data.db                 # SQLite database file (committed to repo)
@@ -148,7 +154,8 @@ POST /api/update_trf_std  { trf_code: "NH", hang_20, hang_40, hang_45 }
 | GET | `/api/get_surcharge_table` | — | — | Bảng phụ thu (10 mức giá) |
 | GET | `/api/get_trf_std` | ✓ | user | Biểu cước hiện tại từ SQL Server |
 | POST | `/api/update_trf_std` | ✓ | admin | Cập nhật biểu cước SQL Server |
-| GET | `/zkteco` | — | — | Render zkteco.ejs (admin check ở client) |
+| GET | `/zkteco` | — | — | Render zkteco.ejs (danh sách thiết bị, admin check ở client) |
+| GET | `/zkteco/devices/:id` | — | — | Render zkteco_device.ejs (chi tiết thiết bị, admin check ở client) |
 | GET | `/api/zkteco/devices` | ✓ | admin | Danh sách thiết bị ZKTeco |
 | POST | `/api/zkteco/devices` | ✓ | admin | Thêm thiết bị ZKTeco |
 | PUT | `/api/zkteco/devices/:id` | ✓ | admin | Cập nhật thiết bị |
@@ -156,6 +163,10 @@ POST /api/update_trf_std  { trf_code: "NH", hang_20, hang_40, hang_45 }
 | POST | `/api/zkteco/devices/:id/test` | ✓ | admin | Kiểm tra kết nối, lấy thông tin máy |
 | POST | `/api/zkteco/devices/:id/set-time` | ✓ | admin | Đặt giờ cho thiết bị (YYYY-MM-DD HH:MM:SS) |
 | POST | `/api/zkteco/devices/:id/sync-time` | ✓ | admin | Đồng bộ giờ thiết bị với server |
+| GET | `/api/zkteco/devices/:id/employees` | ✓ | admin | Danh sách nhân viên từ SQLite |
+| POST | `/api/zkteco/devices/:id/employees/sync` | ✓ | admin | Đồng bộ nhân viên từ máy → SQLite |
+| POST | `/api/zkteco/devices/:id/employees` | ✓ | admin | Thêm nhân viên lên máy + lưu SQLite |
+| DELETE | `/api/zkteco/devices/:id/employees/:uid` | ✓ | admin | Xóa nhân viên khỏi máy + SQLite |
 
 ---
 
@@ -202,6 +213,20 @@ POST /api/update_trf_std  { trf_code: "NH", hang_20, hang_40, hang_45 }
 | status | TEXT | `active` hoặc `inactive` |
 | created_at | TEXT | ISO timestamp |
 | updated_at | TEXT | ISO timestamp |
+
+**Bảng `zkteco_employees`** — nhân viên cache từ máy ZKTeco
+| Cột | Kiểu | Mô tả |
+|-----|------|-------|
+| id | INTEGER | Primary key |
+| device_id | INTEGER | FK → zkteco_devices.id |
+| uid | INTEGER | Slot ID trên máy (1–3000) |
+| user_id | TEXT | Mã nhân viên (max 9 ký tự) |
+| name | TEXT | Họ tên (max 24 ký tự) |
+| role | INTEGER | 0=user, 14=admin |
+| password | TEXT | Mật khẩu (max 8 ký tự) |
+| cardno | INTEGER | Số thẻ RF |
+| synced_at | TEXT | ISO timestamp lần sync gần nhất |
+- UNIQUE(device_id, uid) — mỗi uid chỉ có 1 bản trên 1 máy
 
 ### SQL Server — `PRD_MPC`
 

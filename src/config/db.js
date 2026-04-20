@@ -37,6 +37,24 @@ const sqlite_db = new sqlite3.Database(SQLITE_DB_PATH, (err) => {
             if (e) console.error('> ERROR: Could not create zkteco_devices table:', e.message);
             else console.log('> LOG: Table zkteco_devices ready');
         });
+
+        sqlite_db.run(`
+            CREATE TABLE IF NOT EXISTS zkteco_employees (
+                id        INTEGER PRIMARY KEY AUTOINCREMENT,
+                device_id INTEGER NOT NULL,
+                uid       INTEGER NOT NULL,
+                user_id   TEXT NOT NULL DEFAULT '',
+                name      TEXT NOT NULL DEFAULT '',
+                role      INTEGER DEFAULT 0,
+                password  TEXT DEFAULT '',
+                cardno    INTEGER DEFAULT 0,
+                synced_at TEXT NOT NULL,
+                UNIQUE(device_id, uid)
+            )
+        `, (e) => {
+            if (e) console.error('> ERROR: Could not create zkteco_employees table:', e.message);
+            else console.log('> LOG: Table zkteco_employees ready');
+        });
     });
 });
 

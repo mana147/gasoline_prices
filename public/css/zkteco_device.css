@@ -1,0 +1,248 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #222222;
+    --border: #2a2a2a;
+    --accent: #ff6363;
+    --text: #f0f0f0;
+    --text-muted: #888;
+    --success: #4ade80;
+    --warning: #facc15;
+    --danger: #f87171;
+    --info: #60a5fa;
+    --radius: 10px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+}
+
+/* ── Header ── */
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.btn-back {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: color 0.2s, border-color 0.2s;
+    white-space: nowrap;
+}
+.btn-back:hover { color: var(--text); border-color: #444; }
+
+.header-info { flex: 1; }
+.header-info h1 { font-size: 1.05rem; font-weight: 600; }
+.header-info .header-sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 10px; }
+
+.badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+.badge-active   { background: rgba(74,222,128,0.15); color: var(--success); }
+.badge-inactive { background: rgba(248,113,113,0.15); color: var(--danger); }
+
+/* ── Main container ── */
+.main-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ── Card ── */
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+}
+
+.card-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.card-title-left { display: flex; align-items: center; gap: 8px; }
+
+/* ── Action row (connection & time) ── */
+.action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.settime-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+.settime-inline input[type="datetime-local"] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: var(--text);
+    font-size: 0.85rem;
+    font-family: inherit;
+}
+.settime-inline input[type="datetime-local"]:focus { outline: none; border-color: var(--accent); }
+
+/* ── Buttons ── */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    transition: opacity 0.2s, transform 0.1s;
+    white-space: nowrap;
+}
+.btn:hover { opacity: 0.85; }
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-primary   { background: var(--accent); color: #fff; }
+.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-info      { background: rgba(96,165,250,0.15); color: var(--info); border: 1px solid rgba(96,165,250,0.3); }
+.btn-danger    { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+.btn-sm        { padding: 5px 12px; font-size: 0.8rem; }
+
+/* ── Message ── */
+.message {
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    margin-top: 12px;
+}
+.message.success { background: rgba(74,222,128,0.12); border: 1px solid rgba(74,222,128,0.3); color: var(--success); }
+.message.error   { background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.3); color: var(--danger); }
+.message.info    { background: rgba(96,165,250,0.12); border: 1px solid rgba(96,165,250,0.3); color: var(--info); }
+.hidden { display: none !important; }
+
+/* ── Inline result panel ── */
+.result-panel {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-top: 10px;
+    font-size: 0.82rem;
+}
+.result-panel.success-panel { border-color: rgba(74,222,128,0.3); }
+.result-panel.error-panel   { border-color: rgba(248,113,113,0.3); color: var(--danger); }
+
+.result-title { font-weight: 600; margin-bottom: 6px; }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 20px; margin-top: 6px; }
+.info-row  { display: flex; flex-direction: column; }
+.info-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.info-value { font-weight: 500; margin-top: 2px; word-break: break-all; }
+
+/* ── Employee table ── */
+.emp-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.emp-table th {
+    text-align: left;
+    padding: 8px 12px;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+}
+.emp-table td {
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+.emp-table tr:last-child td { border-bottom: none; }
+.emp-table tbody tr:hover td { background: rgba(255,255,255,0.02); }
+
+.emp-uid    { font-family: monospace; color: var(--text-muted); font-size: 0.82rem; }
+.emp-userid { font-family: monospace; color: var(--info); }
+.emp-role   { font-size: 0.78rem; }
+
+.sync-info { font-size: 0.75rem; color: var(--text-muted); margin-top: 10px; }
+
+/* ── Add employee form ── */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group label { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; }
+
+.form-group input,
+.form-group select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-size: 0.875rem;
+    font-family: inherit;
+    transition: border-color 0.2s;
+    width: 100%;
+}
+.form-group input:focus,
+.form-group select:focus { outline: none; border-color: var(--accent); }
+.form-group input::placeholder { color: var(--text-muted); }
+.form-group select option { background: var(--surface2); }
+
+.form-actions { margin-top: 14px; }
+
+/* ── Empty state ── */
+.empty-state {
+    text-align: center;
+    padding: 36px 20px;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+@media (max-width: 700px) {
+    .main-container { padding: 16px 12px; }
+    .form-grid { grid-template-columns: 1fr 1fr; }
+    .emp-table th:nth-child(5),
+    .emp-table td:nth-child(5) { display: none; }
+}

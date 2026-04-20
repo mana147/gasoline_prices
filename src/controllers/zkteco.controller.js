@@ -81,4 +81,52 @@ async function syncTime(req, res) {
     }
 }
 
-module.exports = { getDevices, addDevice, editDevice, removeDevice, testConnection, setTime, syncTime };
+async function renderDeviceDetail(req, res) {
+    try {
+        const device = await zktecoService.getDeviceById(req.params.id);
+        res.render('zkteco_device', { device });
+    } catch (err) {
+        if (err.status === 404) return res.status(404).send('Không tìm thấy thiết bị');
+        console.error('Lỗi render trang thiết bị:', err);
+        res.status(500).send('Lỗi server');
+    }
+}
+
+async function getEmployees(req, res) {
+    try {
+        const employees = await zktecoService.getEmployees(req.params.id);
+        res.json({ success: true, count: employees.length, employees });
+    } catch (err) {
+        handleServiceError(err, res, 'Lỗi lấy danh sách nhân viên');
+    }
+}
+
+async function syncEmployees(req, res) {
+    try {
+        const result = await zktecoService.syncEmployees(req.params.id);
+        res.json(result);
+    } catch (err) {
+        handleServiceError(err, res, 'Lỗi đồng bộ nhân viên');
+    }
+}
+
+async function createEmployee(req, res) {
+    try {
+        const { uid, userId, name, password, role, cardno } = req.body;
+        const result = await zktecoService.createEmployee(req.params.id, { uid, userId, name, password, role, cardno });
+        res.status(201).json({ ...result, message: 'Thêm nhân viên thành công' });
+    } catch (err) {
+        handleServiceError(err, res, 'Lỗi thêm nhân viên');
+    }
+}
+
+async function deleteEmployee(req, res) {
+    try {
+        const result = await zktecoService.deleteEmployee(req.params.id, req.params.uid);
+        res.json({ ...result, message: 'Xóa nhân viên thành công' });
+    } catch (err) {
+        handleServiceError(err, res, 'Lỗi xóa nhân viên');
+    }
+}
+
+module.exports = { getDevices, addDevice, editDevice, removeDevice, testConnection, setTime, syncTime, renderDeviceDetail, getEmployees, syncEmployees, createEmployee, deleteEmployee };

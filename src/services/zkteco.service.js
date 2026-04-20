@@ -1,5 +1,6 @@
 const ZKLib = require('zkteco-js');
 const zktecoModel = require('../models/zkteco.model');
+const zkEmployeeModel = require('../models/zkEmployee.model');
 const { sqlite_db } = require('../config/db');
 
 const IP_REGEX = /^(\d{1,3}\.){3}\d{1,3}$/;
@@ -142,4 +143,104 @@ async function syncDeviceTime(id) {
     }
 }
 
-module.exports = { getDevices, getDeviceById, createDevice, updateDevice, deleteDevice, testConnection, setDeviceTime, syncDeviceTime };
+async function getEmployees(deviceId) {
+    await getDeviceById(deviceId);
+    return zkEmployeeModel.getAllByDevice(sqlite_db, deviceId);
+}
+
+async function syncEmployees(deviceId) {
+    const deviceRow = await getDeviceById(deviceId);
+    const device = await _connectDevice(deviceRow).catch((e) => {
+        const err = new Error(`Không thể kết nối tới thiết bị: ${e.message}`);
+        err.status = 503;
+        throw err;
+    });
+    try {
+        const result = await device.getUsers();
+        const users = (result && result.data) ? result.data : [];
+        await zkEmployeeModel.upsertMany(sqlite_db, deviceId, users);
+        return { success: true, count: users.length, syncedAt: new Date().toISOString() };
+    } catch (e) {
+        if (e.status) throw e;
+        const err = new Error(`Lỗi đồng bộ nhân viên: ${e.message}`);
+        err.status = 503;
+        throw err;
+    } finally {
+        try { device.disconnect(); } catch (_) { /* ignore */ }
+    }
+}
+
+function _validateEmployee({ uid, userId, name, password }) {
+    if (!uid || isNaN(uid) || uid < 1 || uid > 3000) {
+        const err = new Error('UID phải là số từ 1 đến 3000');
+        err.status = 400;
+        throw err;
+    }
+    if (!userId || String(userId).length > 9) {
+        const err = new Error('Mã nhân viên là bắt buộc và tối đa 9 ký tự');
+        err.status = 400;
+        throw err;
+    }
+    if (!name || String(name).length > 24) {
+        const err = new Error('Họ tên là bắt buộc và tối đa 24 ký tự');
+        err.status = 400;
+        throw err;
+    }
+    if (password && String(password).length > 8) {
+        const err = new Error('Mật khẩu tối đa 8 ký tự');
+        err.status = 400;
+        throw err;
+    }
+}
+
+async function createEmployee(deviceId, fields) {
+    const { uid, userId, name, password = '', role = 0, cardno = 0 } = fields;
+    _validateEmployee({ uid, userId, name, password });
+    const deviceRow = await getDeviceById(deviceId);
+    const device = await _connectDevice(deviceRow).catch((e) => {
+        const err = new Error(`Không thể kết nối tới thiết bị: ${e.message}`);
+        err.status = 503;
+        throw err;
+    });
+    try {
+        await device.setUser(Number(uid), String(userId), String(name), String(password), Number(role), Number(cardno));
+        await zkEmployeeModel.insert(sqlite_db, deviceId, { uid: Number(uid), userId: String(userId), name: String(name), password: String(password), role: Number(role), cardno: Number(cardno) });
+        return { success: true };
+    } catch (e) {
+        if (e.status) throw e;
+        const err = new Error(`Lỗi tạo nhân viên: ${e.message}`);
+        err.status = 503;
+        throw err;
+    } finally {
+        try { device.disconnect(); } catch (_) { /* ignore */ }
+    }
+}
+
+async function deleteEmployee(deviceId, uid) {
+    const uidNum = Number(uid);
+    if (!uidNum || uidNum < 1) {
+        const err = new Error('UID không hợp lệ');
+        err.status = 400;
+        throw err;
+    }
+    const deviceRow = await getDeviceById(deviceId);
+    const device = await _connectDevice(deviceRow).catch((e) => {
+        const err = new Error(`Không thể kết nối tới thiết bị: ${e.message}`);
+        err.status = 503;
+        throw err;
+    });
+    try {
+        await device.deleteUser(uidNum);
+        await zkEmployeeModel.deleteOne(sqlite_db, deviceId, uidNum);
+        return { success: true };
+    } catch (e) {
+        if (e.status) throw e;
+        const err = new Error(`Lỗi xóa nhân viên: ${e.message}`);
+        err.status = 503;
+        throw err;
+    } finally {
+        try { device.disconnect(); } catch (_) { /* ignore */ }
+    }
+}
+
+module.exports = { getDevices, getDeviceById, createDevice, updateDevice, deleteDevice, testConnection, setDeviceTime, syncDeviceTime, getEmployees, syncEmployees, createEmployee, deleteEmployee };
