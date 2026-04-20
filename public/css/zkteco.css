@@ -197,6 +197,41 @@ body {
 /* ── Action buttons in table ── */
 .action-group { display: flex; flex-wrap: wrap; gap: 6px; }
 
+@media (max-width: 420px) {
+    .table-header { align-items: stretch; gap: 10px; }
+    #deviceContainer { overflow: visible; }
+    .device-table { min-width: unset; width: 100%; }
+    .device-table thead { display: none; }
+    .device-table, .device-table tbody, .device-table tr, .device-table td { display: block; width: 100%; }
+    .device-table tr {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        margin-bottom: 16px;
+        padding: 16px;
+    }
+    .device-table td {
+        padding: 10px 0;
+        border: 0;
+    }
+    .device-table td:not(:last-child) { border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .device-table td::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .device-table td:last-child::before { display: none; }
+    .device-table td .action-group { justify-content: flex-start; }
+    .device-table td .device-name { display: block; margin-bottom: 4px; }
+    .device-table td .device-ip { display: block; margin-top: 4px; }
+    .device-table td .device-loc { margin-top: 4px; color: var(--text-muted); font-size: 0.82rem; }
+    .action-group { gap: 8px; }
+}
+
 /* ── Inline result panel (test connection) ── */
 .inline-panel {
     background: var(--surface2);

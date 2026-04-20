@@ -177,15 +177,15 @@
 
             const rows = devices.map(d => `
                 <tr>
-                    <td>
+                    <td data-label="Tên thiết bị">
                         <a href="/zkteco/devices/${d.id}" class="device-name" style="color:var(--text);text-decoration:none;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text)'">${escHtml(d.name)}</a>
                         ${d.location ? `<div class="device-loc">${escHtml(d.location)}</div>` : ''}
                     </td>
-                    <td><span class="device-ip">${escHtml(d.ip)}</span></td>
-                    <td>${d.port}</td>
-                    <td>${d.timeout}ms</td>
-                    <td><span class="badge badge-${d.status === 'active' ? 'active' : 'inactive'}">${d.status === 'active' ? 'Hoạt động' : 'Tắt'}</span></td>
-                    <td>
+                    <td data-label="Địa chỉ IP"><span class="device-ip">${escHtml(d.ip)}</span></td>
+                    <td data-label="Port">${d.port}</td>
+                    <td data-label="Timeout">${d.timeout}ms</td>
+                    <td data-label="Trạng thái"><span class="badge badge-${d.status === 'active' ? 'active' : 'inactive'}">${d.status === 'active' ? 'Hoạt động' : 'Tắt'}</span></td>
+                    <td data-label="Thao tác">
                         <div class="action-group">
                             <a href="/zkteco/devices/${d.id}" class="btn btn-secondary btn-sm">⚙️ Chi tiết</a>
                             <button class="btn btn-secondary btn-sm" onclick='startEdit(${JSON.stringify(d)})'>✏️ Sửa</button>
