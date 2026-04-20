@@ -120,6 +120,16 @@ async function createEmployee(req, res) {
     }
 }
 
+async function updateEmployee(req, res) {
+    try {
+        const { userId, name, password, role, cardno } = req.body;
+        const result = await zktecoService.updateEmployee(req.params.id, req.params.uid, { userId, name, password, role, cardno });
+        res.json({ ...result, message: 'Cập nhật nhân viên thành công' });
+    } catch (err) {
+        handleServiceError(err, res, 'Lỗi cập nhật nhân viên');
+    }
+}
+
 async function deleteEmployee(req, res) {
     try {
         const result = await zktecoService.deleteEmployee(req.params.id, req.params.uid);
@@ -129,4 +139,4 @@ async function deleteEmployee(req, res) {
     }
 }
 
-module.exports = { getDevices, addDevice, editDevice, removeDevice, testConnection, setTime, syncTime, renderDeviceDetail, getEmployees, syncEmployees, createEmployee, deleteEmployee };
+module.exports = { getDevices, addDevice, editDevice, removeDevice, testConnection, setTime, syncTime, renderDeviceDetail, getEmployees, syncEmployees, createEmployee, updateEmployee, deleteEmployee };

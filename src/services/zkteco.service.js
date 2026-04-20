@@ -216,6 +216,30 @@ async function createEmployee(deviceId, fields) {
     }
 }
 
+async function updateEmployee(deviceId, uid, fields) {
+    const { userId, name, password = '', role = 0, cardno = 0 } = fields;
+    const uidNum = Number(uid);
+    _validateEmployee({ uid: uidNum, userId, name, password });
+    const deviceRow = await getDeviceById(deviceId);
+    const device = await _connectDevice(deviceRow).catch((e) => {
+        const err = new Error(`Không thể kết nối tới thiết bị: ${e.message}`);
+        err.status = 503;
+        throw err;
+    });
+    try {
+        await device.setUser(uidNum, String(userId), String(name), String(password), Number(role), Number(cardno));
+        await zkEmployeeModel.insert(sqlite_db, deviceId, { uid: uidNum, userId: String(userId), name: String(name), password: String(password), role: Number(role), cardno: Number(cardno) });
+        return { success: true };
+    } catch (e) {
+        if (e.status) throw e;
+        const err = new Error(`Lỗi cập nhật nhân viên: ${e.message}`);
+        err.status = 503;
+        throw err;
+    } finally {
+        try { device.disconnect(); } catch (_) { /* ignore */ }
+    }
+}
+
 async function deleteEmployee(deviceId, uid) {
     const uidNum = Number(uid);
     if (!uidNum || uidNum < 1) {
@@ -243,4 +267,4 @@ async function deleteEmployee(deviceId, uid) {
     }
 }
 
-module.exports = { getDevices, getDeviceById, createDevice, updateDevice, deleteDevice, testConnection, setDeviceTime, syncDeviceTime, getEmployees, syncEmployees, createEmployee, deleteEmployee };
+module.exports = { getDevices, getDeviceById, createDevice, updateDevice, deleteDevice, testConnection, setDeviceTime, syncDeviceTime, getEmployees, syncEmployees, createEmployee, updateEmployee, deleteEmployee };

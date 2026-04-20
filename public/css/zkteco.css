@@ -156,7 +156,11 @@ body {
     margin-bottom: 16px;
 }
 
-.device-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+#deviceContainer {
+    overflow-x: auto;
+}
+
+.device-table { width: 100%; min-width: 720px; border-collapse: collapse; font-size: 0.875rem; }
 .device-table th {
     text-align: left;
     padding: 8px 12px;
@@ -237,11 +241,25 @@ body {
 }
 .empty-state p { margin-top: 8px; font-size: 0.85rem; }
 
+@media (max-width: 900px) {
+    .page-header { flex-wrap: wrap; align-items: flex-start; }
+    .header-title h1 { font-size: 1rem; }
+    .header-title p { font-size: 0.78rem; }
+    .header-user { width: 100%; margin-top: 10px; }
+    .main-container { padding: 22px 18px; }
+    .card { padding: 20px; }
+    .table-header { flex-direction: column; align-items: stretch; gap: 12px; }
+}
+
 @media (max-width: 700px) {
     .main-container { padding: 16px 12px; }
     .form-grid { grid-template-columns: 1fr; }
+    .card-title { flex-wrap: wrap; }
+    .table-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .device-table { min-width: 100%; }
     .device-table th:nth-child(3),
     .device-table td:nth-child(3),
     .device-table th:nth-child(4),
     .device-table td:nth-child(4) { display: none; }
+    .action-group { width: 100%; }
 }

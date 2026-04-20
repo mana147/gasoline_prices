@@ -18,6 +18,7 @@ router.get('/zkteco/devices/:id',                             zktecoController.r
 router.get('/api/zkteco/devices/:id/employees',               ...admin, zktecoController.getEmployees);
 router.post('/api/zkteco/devices/:id/employees/sync',         ...admin, zktecoController.syncEmployees);
 router.post('/api/zkteco/devices/:id/employees',              ...admin, zktecoController.createEmployee);
+router.put('/api/zkteco/devices/:id/employees/:uid',          ...admin, zktecoController.updateEmployee);
 router.delete('/api/zkteco/devices/:id/employees/:uid',       ...admin, zktecoController.deleteEmployee);
 
 module.exports = router;

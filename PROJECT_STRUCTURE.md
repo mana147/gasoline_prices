@@ -166,6 +166,7 @@ POST /api/update_trf_std  { trf_code: "NH", hang_20, hang_40, hang_45 }
 | GET | `/api/zkteco/devices/:id/employees` | ✓ | admin | Danh sách nhân viên từ SQLite |
 | POST | `/api/zkteco/devices/:id/employees/sync` | ✓ | admin | Đồng bộ nhân viên từ máy → SQLite |
 | POST | `/api/zkteco/devices/:id/employees` | ✓ | admin | Thêm nhân viên lên máy + lưu SQLite |
+| PUT | `/api/zkteco/devices/:id/employees/:uid` | ✓ | admin | Sửa thông tin nhân viên trên máy + SQLite |
 | DELETE | `/api/zkteco/devices/:id/employees/:uid` | ✓ | admin | Xóa nhân viên khỏi máy + SQLite |
 
 ---

@@ -144,6 +144,7 @@ body {
 .btn-primary   { background: var(--accent); color: #fff; }
 .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
 .btn-info      { background: rgba(96,165,250,0.15); color: var(--info); border: 1px solid rgba(96,165,250,0.3); }
+.btn-warning   { background: rgba(250,204,21,0.12); color: var(--warning); border: 1px solid rgba(250,204,21,0.3); }
 .btn-danger    { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
 .btn-sm        { padding: 5px 12px; font-size: 0.8rem; }
 
@@ -197,9 +198,10 @@ body {
 .emp-table tr:last-child td { border-bottom: none; }
 .emp-table tbody tr:hover td { background: rgba(255,255,255,0.02); }
 
-.emp-uid    { font-family: monospace; color: var(--text-muted); font-size: 0.82rem; }
-.emp-userid { font-family: monospace; color: var(--info); }
-.emp-role   { font-size: 0.78rem; }
+.emp-uid     { font-family: monospace; color: var(--text-muted); font-size: 0.82rem; }
+.emp-userid  { font-family: monospace; color: var(--info); }
+.emp-role    { font-size: 0.78rem; }
+.emp-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
 .sync-info { font-size: 0.75rem; color: var(--text-muted); margin-top: 10px; }
 
@@ -232,6 +234,52 @@ body {
 
 .form-actions { margin-top: 14px; }
 
+/* ── Edit Modal ── */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+}
+
+.modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    width: 100%;
+    max-width: 640px;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.modal-title { font-size: 1rem; font-weight: 600; }
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: inherit;
+}
+.modal-close:hover { color: var(--text); background: var(--surface2); }
+
+.modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+
+input[readonly] { opacity: 0.5; cursor: not-allowed; }
+
 /* ── Empty state ── */
 .empty-state {
     text-align: center;
@@ -240,9 +288,33 @@ body {
     font-size: 0.875rem;
 }
 
+#empTableWrap {
+    overflow-x: auto;
+}
+
+@media (max-width: 900px) {
+    .page-header { flex-wrap: wrap; align-items: flex-start; gap: 12px; }
+    .header-info .header-sub { flex-wrap: wrap; gap: 8px; }
+    .main-container { padding: 22px 18px; }
+    .card { padding: 20px; }
+    .card-title { gap: 10px; }
+    .action-row { gap: 8px; }
+    .settime-inline { gap: 6px; }
+}
+
 @media (max-width: 700px) {
     .main-container { padding: 16px 12px; }
-    .form-grid { grid-template-columns: 1fr 1fr; }
+    .page-header { align-items: flex-start; }
+    .card { padding: 18px 16px; }
+    .card-title { flex-wrap: wrap; }
+    .action-row, .settime-inline { flex-direction: column; align-items: stretch; }
+    .form-grid { grid-template-columns: 1fr; }
+    .emp-table { min-width: 100%; }
     .emp-table th:nth-child(5),
     .emp-table td:nth-child(5) { display: none; }
+    .emp-table th:nth-child(4),
+    .emp-table td:nth-child(4) { display: none; }
+    .form-actions { flex-direction: column; align-items: stretch; }
+    .modal-actions { flex-direction: column; }
+    .btn { width: 100%; justify-content: center; }
 }

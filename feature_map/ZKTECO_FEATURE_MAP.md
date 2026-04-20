@@ -8,7 +8,7 @@ Tài liệu này mô tả toàn bộ phạm vi tác động của tính năng **
 
 | Mục | Nội dung |
 |-----|---------|
-| Tên tính năng | Config máy chấm công ZKTeco + Quản lý nhân viên |
+| Tên tính năng | Config máy chấm công ZKTeco + Quản lý nhân viên (CRUD đầy đủ) |
 | Route UI (danh sách) | `GET /zkteco` |
 | Route UI (chi tiết) | `GET /zkteco/devices/:id` |
 | Phân quyền | Admin only (tất cả API đều yêu cầu `authMiddleware + adminMiddleware`) |
@@ -30,13 +30,13 @@ gasoline_prices/
 │
 ├── src/
 │   ├── routes/
-│   │   └── zkteco.routes.js          ← 12 routes: 7 thiết bị + 1 view detail + 4 employee API
+│   │   └── zkteco.routes.js          ← 13 routes: 7 thiết bị + 1 view detail + 5 employee API
 │   ├── controllers/
-│   │   └── zkteco.controller.js      ← 12 handlers (thêm: renderDeviceDetail, getEmployees,
-│   │                                    syncEmployees, createEmployee, deleteEmployee)
+│   │   └── zkteco.controller.js      ← 13 handlers (thêm: renderDeviceDetail, getEmployees,
+│   │                                    syncEmployees, createEmployee, updateEmployee, deleteEmployee)
 │   ├── services/
 │   │   └── zkteco.service.js         ← Thêm: getEmployees, syncEmployees, createEmployee,
-│   │                                    deleteEmployee, _validateEmployee
+│   │                                    updateEmployee, deleteEmployee, _validateEmployee
 │   ├── models/
 │   │   ├── zkteco.model.js           ← SQLite CRUD bảng zkteco_devices (5 hàm promisified)
 │   │   └── zkEmployee.model.js       ← SQLite CRUD bảng zkteco_employees (5 hàm promisified)
@@ -123,6 +123,7 @@ gasoline_prices/
 | `GET` | `/api/zkteco/devices/:id/employees` | `getEmployees` | Danh sách nhân viên từ SQLite (không kết nối máy) |
 | `POST` | `/api/zkteco/devices/:id/employees/sync` | `syncEmployees` | `getUsers()` từ máy → upsert SQLite |
 | `POST` | `/api/zkteco/devices/:id/employees` | `createEmployee` | `setUser()` lên máy → insert SQLite |
+| `PUT` | `/api/zkteco/devices/:id/employees/:uid` | `updateEmployee` | `setUser()` lên máy → upsert SQLite |
 | `DELETE` | `/api/zkteco/devices/:id/employees/:uid` | `deleteEmployee` | `deleteUser()` từ máy → delete SQLite |
 
 **Auth header tất cả API endpoints:** `Authorization: Bearer <token>`
@@ -187,6 +188,18 @@ Client (form thêm nhân viên)
       → _validateEmployee (uid 1-3000, userId max 9, name max 24, password max 8)
       → _connectDevice → device.setUser(uid, userId, name, password, role, cardno)
       → zkEmployee.model.insert(db, deviceId, employee)
+      → device.disconnect()
+  → res.json({ success })
+```
+
+### Sửa nhân viên
+```
+Client (click Sửa → modal → Lưu thay đổi)
+  → PUT /api/zkteco/devices/:id/employees/:uid  { userId, name, password, role, cardno }
+  → zkteco.service.updateEmployee(deviceId, uid, fields)
+      → _validateEmployee (uid 1-3000, userId max 9, name max 24, password max 8)
+      → _connectDevice → device.setUser(uid, userId, name, password, role, cardno)
+      → zkEmployee.model.insert(db, deviceId, employee)  ← upsert (ON CONFLICT DO UPDATE)
       → device.disconnect()
   → res.json({ success })
 ```

@@ -43,6 +43,50 @@
         <div id="connResult" class="hidden"></div>
     </div>
 
+    <!-- ── Modal Sửa nhân viên ── -->
+    <div class="modal-overlay hidden" id="editModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">✏️ Sửa nhân viên</span>
+                <button class="modal-close" id="btnCloseModal">✕</button>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>UID (không thể thay đổi)</label>
+                    <input type="number" id="eUid" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Mã nhân viên * (max 9 ký tự)</label>
+                    <input type="text" id="eUserId" maxlength="9">
+                </div>
+                <div class="form-group">
+                    <label>Họ tên * (max 24 ký tự)</label>
+                    <input type="text" id="eName" maxlength="24">
+                </div>
+                <div class="form-group">
+                    <label>Mật khẩu (max 8 ký tự)</label>
+                    <input type="text" id="ePassword" maxlength="8" placeholder="(để trống = không có mật khẩu)">
+                </div>
+                <div class="form-group">
+                    <label>Vai trò</label>
+                    <select id="eRole">
+                        <option value="0">User (0)</option>
+                        <option value="14">Admin (14)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Số thẻ RF</label>
+                    <input type="number" id="eCardno" min="0">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="btnSaveEdit">💾 Lưu thay đổi</button>
+                <button class="btn btn-secondary" id="btnCancelEdit">Hủy</button>
+            </div>
+            <div id="editMsg" class="hidden"></div>
+        </div>
+    </div>
+
     <!-- ── Thêm nhân viên mới ── -->
     <div class="card">
         <div class="card-title"><span>➕ Thêm nhân viên mới</span></div>
@@ -235,7 +279,10 @@ function renderEmployeeTable(employees) {
             <td>${e.name}</td>
             <td class="emp-role">${e.role === 14 ? 'Admin' : 'User'}</td>
             <td>${e.cardno || '—'}</td>
-            <td>
+            <td class="emp-actions">
+                <button class="btn btn-warning btn-sm" onclick="openEditModal(${e.uid}, '${e.user_id.replace(/'/g,"\\'")}', '${e.name.replace(/'/g,"\\'")}', ${e.role}, ${e.cardno || 0})">
+                    ✏️ Sửa
+                </button>
                 <button class="btn btn-danger btn-sm" onclick="deleteEmployee(${e.uid}, '${e.name.replace(/'/g,"\\'")}')">
                     🗑️ Xóa
                 </button>
@@ -341,6 +388,68 @@ document.getElementById('btnAddEmp').addEventListener('click', async function() 
     } finally {
         btn.disabled = false;
         btn.textContent = '➕ Thêm nhân viên';
+    }
+});
+
+// ── Edit Employee Modal ──
+let editingUid = null;
+
+function openEditModal(uid, userId, name, role, cardno) {
+    editingUid = uid;
+    document.getElementById('eUid').value = uid;
+    document.getElementById('eUserId').value = userId;
+    document.getElementById('eName').value = name;
+    document.getElementById('ePassword').value = '';
+    document.getElementById('eRole').value = role;
+    document.getElementById('eCardno').value = cardno;
+    hideEl(document.getElementById('editMsg'));
+    showEl(document.getElementById('editModal'));
+}
+
+function closeEditModal() {
+    editingUid = null;
+    hideEl(document.getElementById('editModal'));
+}
+
+document.getElementById('btnCloseModal').addEventListener('click', closeEditModal);
+document.getElementById('btnCancelEdit').addEventListener('click', closeEditModal);
+document.getElementById('editModal').addEventListener('click', function(e) {
+    if (e.target === this) closeEditModal();
+});
+
+document.getElementById('btnSaveEdit').addEventListener('click', async function() {
+    const btn = this;
+    const userId   = document.getElementById('eUserId').value.trim();
+    const name     = document.getElementById('eName').value.trim();
+    const password = document.getElementById('ePassword').value;
+    const role     = parseInt(document.getElementById('eRole').value);
+    const cardno   = parseInt(document.getElementById('eCardno').value) || 0;
+    const msg      = document.getElementById('editMsg');
+
+    hideEl(msg);
+    if (!userId || !name) { showMsg(msg, 'error', '❌ Vui lòng điền đầy đủ Mã NV và Họ tên'); return; }
+
+    btn.disabled = true;
+    btn.textContent = 'Đang lưu...';
+    try {
+        const r = await fetch(`/api/zkteco/devices/${DEVICE_ID}/employees/${editingUid}`, {
+            method: 'PUT',
+            headers: adminHeaders,
+            body: JSON.stringify({ userId, name, password, role, cardno })
+        });
+        const data = await r.json();
+        if (data.success) {
+            closeEditModal();
+            showMsg(document.getElementById('syncMsg'), 'success', `✅ Đã cập nhật nhân viên "${name}" (UID: ${editingUid})`);
+            await loadEmployees();
+        } else {
+            showMsg(msg, 'error', '❌ ' + data.error);
+        }
+    } catch (e) {
+        showMsg(msg, 'error', '❌ Lỗi: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '💾 Lưu thay đổi';
     }
 });
 
