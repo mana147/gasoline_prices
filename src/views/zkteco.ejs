@@ -22,33 +22,38 @@
         <!-- Form thêm / sửa thiết bị -->
         <div class="card">
             <div class="card-title">➕ <span id="formTitle">Thêm thiết bị mới</span></div>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Tên thiết bị *</label>
-                    <input type="text" id="fName" placeholder="VD: Máy chấm công VP">
-                </div>
-                <div class="form-group">
-                    <label>Địa chỉ IP *</label>
-                    <input type="text" id="fIp" placeholder="192.168.1.201">
-                </div>
-                <div class="form-group">
-                    <label>Port</label>
-                    <input type="number" id="fPort" placeholder="4370" value="4370">
-                </div>
-                <div class="form-group">
-                    <label>Timeout (ms)</label>
-                    <input type="number" id="fTimeout" placeholder="5000" value="5000">
-                </div>
-                <div class="form-group">
-                    <label>Vị trí</label>
-                    <input type="text" id="fLocation" placeholder="VD: Tầng 1 - Cổng vào">
-                </div>
-            </div>
             <div class="form-actions">
-                <button class="btn btn-primary" id="btnSubmit" onclick="submitForm()">Thêm thiết bị</button>
-                <button class="btn btn-secondary hidden" id="btnCancel" onclick="cancelEdit()">Hủy</button>
+                <button class="btn btn-primary btn-sm" id="btnToggleForm" onclick="showForm()">Thêm thiết bị mới</button>
             </div>
-            <div id="formMessage" class="message hidden"></div>
+            <div id="deviceFormArea" class="hidden">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Tên thiết bị *</label>
+                        <input type="text" id="fName" placeholder="VD: Máy chấm công VP">
+                    </div>
+                    <div class="form-group">
+                        <label>Địa chỉ IP *</label>
+                        <input type="text" id="fIp" placeholder="192.168.1.201">
+                    </div>
+                    <div class="form-group">
+                        <label>Port</label>
+                        <input type="number" id="fPort" placeholder="4370" value="4370">
+                    </div>
+                    <div class="form-group">
+                        <label>Timeout (ms)</label>
+                        <input type="number" id="fTimeout" placeholder="5000" value="5000">
+                    </div>
+                    <div class="form-group">
+                        <label>Vị trí</label>
+                        <input type="text" id="fLocation" placeholder="VD: Tầng 1 - Cổng vào">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-primary" id="btnSubmit" onclick="submitForm()">Thêm thiết bị</button>
+                    <button class="btn btn-secondary hidden" id="btnCancel" onclick="cancelEdit()">Hủy</button>
+                </div>
+                <div id="formMessage" class="message hidden"></div>
+            </div>
         </div>
 
         <!-- Danh sách thiết bị -->
@@ -89,15 +94,31 @@
 
         let editingId = null;
 
+        function showForm() {
+            document.getElementById('deviceFormArea').classList.remove('hidden');
+            document.getElementById('btnToggleForm').classList.add('hidden');
+            document.getElementById('btnCancel').classList.remove('hidden');
+            if (!editingId) {
+                document.getElementById('formTitle').textContent = 'Thêm thiết bị mới';
+                document.getElementById('btnSubmit').textContent = 'Thêm thiết bị';
+            }
+        }
+
+        function hideForm() {
+            document.getElementById('deviceFormArea').classList.add('hidden');
+            document.getElementById('btnToggleForm').classList.remove('hidden');
+            document.getElementById('btnCancel').classList.add('hidden');
+        }
+
         function cancelEdit() {
             editingId = null;
             document.getElementById('formTitle').textContent = 'Thêm thiết bị mới';
             document.getElementById('btnSubmit').textContent = 'Thêm thiết bị';
-            document.getElementById('btnCancel').classList.add('hidden');
             ['fName','fIp','fPort','fTimeout','fLocation'].forEach(id => {
                 document.getElementById(id).value = id === 'fPort' ? '4370' : id === 'fTimeout' ? '5000' : '';
             });
             hideMsg('formMessage');
+            hideForm();
         }
 
         function startEdit(device) {
@@ -110,6 +131,7 @@
             document.getElementById('fPort').value = device.port || 4370;
             document.getElementById('fTimeout').value = device.timeout || 5000;
             document.getElementById('fLocation').value = device.location || '';
+            showForm();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 

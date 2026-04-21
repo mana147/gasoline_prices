@@ -227,9 +227,16 @@ body {
     border-bottom: 1px solid var(--border);
     vertical-align: middle;
 }
+.emp-table td.emp-userid {
+    color: var(--info);
+    font-weight: 600;
+}
 .emp-table th:nth-child(1),
 .emp-table td:nth-child(1) {
     display: none;
+}
+.emp-table th:nth-child(2) {
+    color: var(--info);
 }
 .emp-role    { font-size: 0.78rem; }
 .emp-actions { display: flex; gap: 6px; flex-wrap: wrap; }

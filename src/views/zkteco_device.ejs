@@ -91,40 +91,47 @@
     <div class="card">
         <div class="card-title"><span>➕ Thêm nhân viên mới</span></div>
 
-        <div class="form-grid">
-            <div class="form-group">
-                <label>UID (1-3000) *</label>
-                <input type="number" id="fUid" min="1" max="3000" placeholder="1">
-            </div>
-            <div class="form-group">
-                <label>Mã nhân viên * (max 9 ký tự)</label>
-                <input type="text" id="fUserId" maxlength="9" placeholder="EMP001">
-            </div>
-            <div class="form-group">
-                <label>Họ tên * (max 24 ký tự)</label>
-                <input type="text" id="fName" maxlength="24" placeholder="Nguyễn Văn A">
-            </div>
-            <div class="form-group">
-                <label>Mật khẩu (max 8 ký tự)</label>
-                <input type="text" id="fPassword" maxlength="8" placeholder="(trống = không có)">
-            </div>
-            <div class="form-group">
-                <label>Vai trò</label>
-                <select id="fRole">
-                    <option value="0">User (0)</option>
-                    <option value="14">Admin (14)</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Số thẻ RF</label>
-                <input type="number" id="fCardno" min="0" value="0" placeholder="0">
-            </div>
+        <div class="form-actions">
+            <button class="btn btn-primary btn-sm" id="btnToggleAddEmp">Thêm nhân viên mới</button>
         </div>
 
-        <div class="form-actions">
-            <button class="btn btn-primary" id="btnAddEmp">➕ Thêm nhân viên</button>
+        <div id="employeeFormArea" class="hidden">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>UID (1-3000) *</label>
+                    <input type="number" id="fUid" min="1" max="3000" placeholder="1">
+                </div>
+                <div class="form-group">
+                    <label>Mã nhân viên * (max 9 ký tự)</label>
+                    <input type="text" id="fUserId" maxlength="9" placeholder="EMP001">
+                </div>
+                <div class="form-group">
+                    <label>Họ tên * (max 24 ký tự)</label>
+                    <input type="text" id="fName" maxlength="24" placeholder="Nguyễn Văn A">
+                </div>
+                <div class="form-group">
+                    <label>Mật khẩu (max 8 ký tự)</label>
+                    <input type="text" id="fPassword" maxlength="8" placeholder="(trống = không có)">
+                </div>
+                <div class="form-group">
+                    <label>Vai trò</label>
+                    <select id="fRole">
+                        <option value="0">User (0)</option>
+                        <option value="14">Admin (14)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Số thẻ RF</label>
+                    <input type="number" id="fCardno" min="0" value="0" placeholder="0">
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn-primary" id="btnAddEmp">➕ Thêm nhân viên</button>
+                <button class="btn btn-secondary" id="btnCancelAddEmp">Hủy</button>
+            </div>
+            <div id="addMsg" class="hidden"></div>
         </div>
-        <div id="addMsg" class="hidden"></div>
     </div>
 
     <!-- ── Danh sách nhân viên ── -->
@@ -175,6 +182,15 @@ function showMsg(el, type, text) {
 }
 function hideEl(el) { el.classList.add('hidden'); }
 function showEl(el) { el.classList.remove('hidden'); }
+
+function showAddEmployeeForm() {
+    showEl(document.getElementById('employeeFormArea'));
+    hideEl(document.getElementById('btnToggleAddEmp'));
+}
+function hideAddEmployeeForm() {
+    hideEl(document.getElementById('employeeFormArea'));
+    showEl(document.getElementById('btnToggleAddEmp'));
+}
 
 // ── Test connection ──
 document.getElementById('btnTest').addEventListener('click', async function() {
@@ -391,6 +407,15 @@ async function deleteEmployee(uid, name) {
 }
 
 // ── Add employee ──
+document.getElementById('btnToggleAddEmp').addEventListener('click', function() {
+    showAddEmployeeForm();
+});
+
+document.getElementById('btnCancelAddEmp').addEventListener('click', function() {
+    hideAddEmployeeForm();
+    hideEl(document.getElementById('addMsg'));
+});
+
 document.getElementById('btnAddEmp').addEventListener('click', async function() {
     const btn = this;
     const uid      = parseInt(document.getElementById('fUid').value);
@@ -423,6 +448,7 @@ document.getElementById('btnAddEmp').addEventListener('click', async function() 
             document.getElementById('fCardno').value = '0';
             document.getElementById('fRole').value = '0';
             await loadEmployees();
+            hideAddEmployeeForm();
         } else {
             showMsg(msg, 'error', '❌ ' + data.error);
         }
