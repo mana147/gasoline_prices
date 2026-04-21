@@ -179,6 +179,38 @@ body {
 .info-value { font-weight: 500; margin-top: 2px; word-break: break-all; }
 
 /* ── Employee table ── */
+.emp-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.search-input {
+    flex: none;
+    width: 100%;
+    max-width: 320px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px 14px;
+    font-size: 0.9rem;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.emp-count {
+    color: var(--text-muted);
+    font-size: 0.86rem;
+    white-space: nowrap;
+}
+
 .emp-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
 .emp-table th {
     text-align: left;
@@ -195,11 +227,10 @@ body {
     border-bottom: 1px solid var(--border);
     vertical-align: middle;
 }
-.emp-table tr:last-child td { border-bottom: none; }
-.emp-table tbody tr:hover td { background: rgba(255,255,255,0.02); }
-
-.emp-uid     { font-family: monospace; color: var(--text-muted); font-size: 0.82rem; }
-.emp-userid  { font-family: monospace; color: var(--info); }
+.emp-table th:nth-child(1),
+.emp-table td:nth-child(1) {
+    display: none;
+}
 .emp-role    { font-size: 0.78rem; }
 .emp-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
@@ -309,12 +340,18 @@ input[readonly] { opacity: 0.5; cursor: not-allowed; }
     .card-title { flex-wrap: wrap; }
     .action-row, .settime-inline { flex-direction: column; align-items: stretch; }
     .form-grid { grid-template-columns: 1fr; }
+    .emp-toolbar { flex-direction: column; align-items: stretch; }
+    .search-input { width: 100%; padding: 8px 12px; font-size: 0.82rem; }
     .emp-table { min-width: 100%; }
+    .emp-table th, .emp-table td { font-size: 0.7rem; padding: 7px 8px; }
     .emp-table th:nth-child(5),
     .emp-table td:nth-child(5) { display: none; }
     .emp-table th:nth-child(4),
     .emp-table td:nth-child(4) { display: none; }
+    .btn { width: 100%; justify-content: center; font-size: 0.72rem; padding: 6px 8px; min-height: 30px; }
+    .btn-sm { padding: 4px 6px; }
+    .btn .btn-text { display: none; }
+    .btn .btn-icon { margin: 0; font-size: 0.85rem; line-height: 1; }
     .form-actions { flex-direction: column; align-items: stretch; }
     .modal-actions { flex-direction: column; }
-    .btn { width: 100%; justify-content: center; }
 }

@@ -198,7 +198,8 @@ body {
 .action-group { display: flex; flex-wrap: wrap; gap: 6px; }
 
 @media (max-width: 420px) {
-    .table-header { align-items: stretch; gap: 10px; }
+    .table-header { align-items: flex-start; gap: 10px; }
+    .table-header .card-title { margin-bottom: 0; }
     #deviceContainer { overflow: visible; }
     .device-table { min-width: unset; width: 100%; }
     .device-table thead { display: none; }
@@ -206,9 +207,9 @@ body {
     .device-table tr {
         background: var(--surface2);
         border: 1px solid var(--border);
-        border-radius: 14px;
+        border-radius: 16px;
         margin-bottom: 16px;
-        padding: 16px;
+        padding: 14px 16px;
     }
     .device-table td {
         padding: 10px 0;
@@ -226,10 +227,13 @@ body {
     }
     .device-table td:last-child::before { display: none; }
     .device-table td .action-group { justify-content: flex-start; }
-    .device-table td .device-name { display: block; margin-bottom: 4px; }
+    .device-table td .device-name { display: block; margin-bottom: 4px; font-size: 0.95rem; }
     .device-table td .device-ip { display: block; margin-top: 4px; }
     .device-table td .device-loc { margin-top: 4px; color: var(--text-muted); font-size: 0.82rem; }
-    .action-group { gap: 8px; }
+    .action-group { gap: 10px; flex-wrap: wrap; }
+    .action-group .btn { flex: 1 1 100%; }
+    .btn-sm { padding: 10px 12px; }
+    .device-table tr { box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 12px 30px rgba(0,0,0,0.16); }
 }
 
 /* ── Inline result panel (test connection) ── */

@@ -112,6 +112,7 @@ async function setDeviceTime(id, datetimeStr) {
         throw err;
     });
     try {
+        console.log('setDeviceTime :>> ', date);
         await device.setTime(date);
         return { success: true, datetime: datetimeStr };
     } catch (e) {
@@ -126,12 +127,14 @@ async function setDeviceTime(id, datetimeStr) {
 async function syncDeviceTime(id) {
     const deviceRow = await getDeviceById(id);
     const now = new Date();
+    
     const device = await _connectDevice(deviceRow).catch((e) => {
         const err = new Error(`Không thể kết nối tới thiết bị: ${e.message}`);
         err.status = 503;
         throw err;
     });
     try {
+        console.log('syncDeviceTime :>> ', now);
         await device.setTime(now);
         return { success: true, syncedAt: now.toISOString() };
     } catch (e) {
@@ -158,6 +161,7 @@ async function syncEmployees(deviceId) {
     try {
         const result = await device.getUsers();
         const users = (result && result.data) ? result.data : [];
+        console.log('syncEmployees users:>> ', users);
         await zkEmployeeModel.upsertMany(sqlite_db, deviceId, users);
         return { success: true, count: users.length, syncedAt: new Date().toISOString() };
     } catch (e) {

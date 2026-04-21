@@ -93,7 +93,7 @@
 
         <div class="form-grid">
             <div class="form-group">
-                <label>UID (1–3000) *</label>
+                <label>UID (1-3000) *</label>
                 <input type="number" id="fUid" min="1" max="3000" placeholder="1">
             </div>
             <div class="form-group">
@@ -134,9 +134,15 @@
             <button class="btn btn-info btn-sm" id="btnSync">🔄 Đồng bộ từ máy</button>
         </div>
 
+        <div class="emp-toolbar">
+            <input id="searchUserId" class="search-input" type="text" placeholder="Tìm theo Mã NV hoặc Họ tên...">
+            <div id="empCount" class="emp-count"></div>
+        </div>
+
         <div id="empTableWrap">
             <div class="empty-state">Nhấn <strong>Đồng bộ từ máy</strong> để tải danh sách hoặc dữ liệu chưa có.</div>
         </div>
+        
         <div id="syncInfo" class="sync-info hidden"></div>
         <div id="syncMsg" class="hidden"></div>
     </div>
@@ -159,6 +165,8 @@ const token = localStorage.getItem('token');
 })();
 
 const adminHeaders = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token };
+let employees = [];
+let recentlyAddedUserIds = [];
 
 function showMsg(el, type, text) {
     el.className = 'message ' + type;
@@ -260,19 +268,48 @@ async function loadEmployees() {
     try {
         const r = await fetch(`/api/zkteco/devices/${DEVICE_ID}/employees`, { headers: adminHeaders });
         const data = await r.json();
-        renderEmployeeTable(data.employees || []);
+        employees = data.employees || [];
+        renderEmployeeTable();
     } catch (e) {
         document.getElementById('empTableWrap').innerHTML = '<div class="empty-state">Lỗi tải dữ liệu.</div>';
     }
 }
 
-function renderEmployeeTable(employees) {
+function renderEmployeeTable() {
     const wrap = document.getElementById('empTableWrap');
-    if (!employees.length) {
-        wrap.innerHTML = '<div class="empty-state">Chưa có nhân viên. Nhấn <strong>Đồng bộ từ máy</strong> để tải.</div>';
+    const searchValue = document.getElementById('searchUserId')?.value.trim().toLowerCase() || '';
+    const searchActive = Boolean(searchValue);
+
+    const ordered = [];
+    const seen = new Set();
+    for (const userId of recentlyAddedUserIds) {
+        const item = employees.find(e => e.user_id === userId);
+        if (item) {
+            ordered.push(item);
+            seen.add(item.user_id);
+        }
+    }
+    const remaining = employees
+        .filter(e => !seen.has(e.user_id))
+        .sort((a, b) => b.user_id.localeCompare(a.user_id, 'vi', { sensitivity: 'base' }));
+    ordered.push(...remaining);
+
+    const filtered = searchActive
+        ? ordered.filter(e =>
+            e.user_id.toLowerCase().includes(searchValue) ||
+            e.name.toLowerCase().includes(searchValue)
+        )
+        : ordered;
+
+    const countEl = document.getElementById('empCount');
+    countEl.textContent = filtered.length ? `${filtered.length} nhân viên` : '';
+
+    if (!filtered.length) {
+        wrap.innerHTML = `<div class="empty-state">${searchActive ? 'Không tìm thấy nhân viên theo Mã NV.' : 'Chưa có nhân viên. Nhấn <strong>Đồng bộ từ máy</strong> để tải.'}</div>`;
         return;
     }
-    const rows = employees.map(e => `
+
+    const rows = filtered.map(e => `
         <tr>
             <td class="emp-uid">${e.uid}</td>
             <td class="emp-userid">${e.user_id}</td>
@@ -281,10 +318,12 @@ function renderEmployeeTable(employees) {
             <td>${e.cardno || '—'}</td>
             <td class="emp-actions">
                 <button class="btn btn-warning btn-sm" onclick="openEditModal(${e.uid}, '${e.user_id.replace(/'/g,"\\'")}', '${e.name.replace(/'/g,"\\'")}', ${e.role}, ${e.cardno || 0})">
-                    ✏️ Sửa
+                    <span class="btn-icon">✏️</span>
+                    <span class="btn-text">Sửa</span>
                 </button>
                 <button class="btn btn-danger btn-sm" onclick="deleteEmployee(${e.uid}, '${e.name.replace(/'/g,"\\'")}')">
-                    🗑️ Xóa
+                    <span class="btn-icon">🗑️</span>
+                    <span class="btn-text">Xóa</span>
                 </button>
             </td>
         </tr>
@@ -298,6 +337,7 @@ function renderEmployeeTable(employees) {
             </thead>
             <tbody>${rows}</tbody>
         </table>`;
+
     const lastSynced = employees.reduce((acc, e) => e.synced_at > acc ? e.synced_at : acc, '');
     if (lastSynced) {
         const info = document.getElementById('syncInfo');
@@ -329,6 +369,8 @@ document.getElementById('btnSync').addEventListener('click', async function() {
         btn.textContent = '🔄 Đồng bộ từ máy';
     }
 });
+
+document.getElementById('searchUserId').addEventListener('input', renderEmployeeTable);
 
 // ── Delete employee ──
 async function deleteEmployee(uid, name) {
@@ -372,6 +414,7 @@ document.getElementById('btnAddEmp').addEventListener('click', async function() 
         });
         const data = await r.json();
         if (data.success) {
+            recentlyAddedUserIds = [userId, ...recentlyAddedUserIds.filter(id => id !== userId)];
             showMsg(msg, 'success', `✅ Đã thêm nhân viên "${name}" (UID: ${uid})`);
             document.getElementById('fUid').value = '';
             document.getElementById('fUserId').value = '';
