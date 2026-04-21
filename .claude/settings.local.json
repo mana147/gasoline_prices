@@ -8,7 +8,8 @@
       "WebFetch(domain:api.github.com)",
       "WebFetch(domain:github.com)",
       "Bash(npm install *)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(node scripts/test_zkteco_users.js)"
     ]
   }
 }

@@ -184,6 +184,7 @@ Client (click "Đồng bộ từ máy")
 ```
 Client (form thêm nhân viên)
   → POST /api/zkteco/devices/:id/employees  { uid, userId, name, password, role, cardno }
+      UID ẩn khỏi form, tự động = giá trị Mã nhân viên (fUserId input event → fUid hidden)
   → zkteco.service.createEmployee(deviceId, fields)
       → _validateEmployee (uid 1-3000, userId max 9, name max 24, password max 8)
       → _connectDevice → device.setUser(uid, userId, name, password, role, cardno)

@@ -97,10 +97,7 @@
 
         <div id="employeeFormArea" class="hidden">
             <div class="form-grid">
-                <div class="form-group">
-                    <label>UID (1-3000) *</label>
-                    <input type="number" id="fUid" min="1" max="3000" placeholder="1">
-                </div>
+                <input type="hidden" id="fUid">
                 <div class="form-group">
                     <label>Mã nhân viên * (max 9 ký tự)</label>
                     <input type="text" id="fUserId" maxlength="9" placeholder="EMP001">
@@ -174,6 +171,7 @@ const token = localStorage.getItem('token');
 const adminHeaders = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token };
 let employees = [];
 let recentlyAddedUserIds = [];
+let uidSortDirection = null; // null, 'asc', 'desc'
 
 function showMsg(el, type, text) {
     el.className = 'message ' + type;
@@ -297,18 +295,39 @@ function renderEmployeeTable() {
     const searchActive = Boolean(searchValue);
 
     const ordered = [];
-    const seen = new Set();
-    for (const userId of recentlyAddedUserIds) {
-        const item = employees.find(e => e.user_id === userId);
-        if (item) {
-            ordered.push(item);
-            seen.add(item.user_id);
-        }
+
+    function parseNumericId(str) {
+        const digits = String(str || '').replace(/\D/g, '');
+        return digits ? parseInt(digits, 10) : NaN;
     }
-    const remaining = employees
-        .filter(e => !seen.has(e.user_id))
-        .sort((a, b) => b.user_id.localeCompare(a.user_id, 'vi', { sensitivity: 'base' }));
-    ordered.push(...remaining);
+    function compareUserId(a, b) {
+        const aNum = parseNumericId(a.user_id);
+        const bNum = parseNumericId(b.user_id);
+        if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) {
+            return aNum - bNum;
+        }
+        return a.user_id.localeCompare(b.user_id, 'vi', { sensitivity: 'base' });
+    }
+
+    if (uidSortDirection) {
+        ordered.push(...[...employees].sort((a, b) => {
+            const diff = compareUserId(a, b);
+            return uidSortDirection === 'asc' ? diff : -diff;
+        }));
+    } else {
+        const seen = new Set();
+        for (const userId of recentlyAddedUserIds) {
+            const item = employees.find(e => e.user_id === userId);
+            if (item) {
+                ordered.push(item);
+                seen.add(item.user_id);
+            }
+        }
+        const remaining = employees
+            .filter(e => !seen.has(e.user_id))
+            .sort((a, b) => b.user_id.localeCompare(a.user_id, 'vi', { sensitivity: 'base' }));
+        ordered.push(...remaining);
+    }
 
     const filtered = searchActive
         ? ordered.filter(e =>
@@ -344,11 +363,20 @@ function renderEmployeeTable() {
             </td>
         </tr>
     `).join('');
+    const sortIcon = uidSortDirection === 'asc' ? '↑' : uidSortDirection === 'desc' ? '↓' : '↕';
     wrap.innerHTML = `
         <table class="emp-table">
             <thead>
                 <tr>
-                    <th>UID</th><th>Mã NV</th><th>Họ tên</th><th>Vai trò</th><th>Số thẻ</th><th>Thao tác</th>
+                    <th>UID</th>
+                    <th>
+                        Mã NV
+                        <button class="sort-btn" onclick="toggleUidSort()" title="Sắp xếp theo số">${sortIcon}</button>
+                    </th>
+                    <th>Họ tên</th>
+                    <th>Vai trò</th>
+                    <th>Số thẻ</th>
+                    <th>Thao tác</th>
                 </tr>
             </thead>
             <tbody>${rows}</tbody>
@@ -388,6 +416,17 @@ document.getElementById('btnSync').addEventListener('click', async function() {
 
 document.getElementById('searchUserId').addEventListener('input', renderEmployeeTable);
 
+function toggleUidSort() {
+    if (!uidSortDirection) {
+        uidSortDirection = 'asc';
+    } else if (uidSortDirection === 'asc') {
+        uidSortDirection = 'desc';
+    } else {
+        uidSortDirection = null;
+    }
+    renderEmployeeTable();
+}
+
 // ── Delete employee ──
 async function deleteEmployee(uid, name) {
     if (!confirm(`Xóa nhân viên "${name}" (UID: ${uid}) khỏi thiết bị và hệ thống?`)) return;
@@ -411,6 +450,10 @@ document.getElementById('btnToggleAddEmp').addEventListener('click', function() 
     showAddEmployeeForm();
 });
 
+document.getElementById('fUserId').addEventListener('input', function() {
+    document.getElementById('fUid').value = this.value;
+});
+
 document.getElementById('btnCancelAddEmp').addEventListener('click', function() {
     hideAddEmployeeForm();
     hideEl(document.getElementById('addMsg'));
@@ -427,7 +470,7 @@ document.getElementById('btnAddEmp').addEventListener('click', async function() 
     const msg      = document.getElementById('addMsg');
 
     hideEl(msg);
-    if (!uid || !userId || !name) { showMsg(msg, 'error', '❌ Vui lòng điền đầy đủ UID, Mã NV và Họ tên'); return; }
+    if (!userId || !name) { showMsg(msg, 'error', '❌ Vui lòng điền đầy đủ Mã NV và Họ tên'); return; }
 
     btn.disabled = true;
     btn.textContent = 'Đang thêm...';
@@ -441,8 +484,8 @@ document.getElementById('btnAddEmp').addEventListener('click', async function() 
         if (data.success) {
             recentlyAddedUserIds = [userId, ...recentlyAddedUserIds.filter(id => id !== userId)];
             showMsg(msg, 'success', `✅ Đã thêm nhân viên "${name}" (UID: ${uid})`);
-            document.getElementById('fUid').value = '';
             document.getElementById('fUserId').value = '';
+            document.getElementById('fUid').value = '';
             document.getElementById('fName').value = '';
             document.getElementById('fPassword').value = '';
             document.getElementById('fCardno').value = '0';
