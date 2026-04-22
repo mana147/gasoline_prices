@@ -174,12 +174,7 @@ async function syncEmployees(deviceId) {
     }
 }
 
-function _validateEmployee({ uid, userId, name, password }) {
-    if (!uid || isNaN(uid) || uid < 1 || uid > 3000) {
-        const err = new Error('UID phải là số từ 1 đến 3000');
-        err.status = 400;
-        throw err;
-    }
+function _validateEmployeeFields({ userId, name, password }) {
     if (!userId || String(userId).length > 9) {
         const err = new Error('Mã nhân viên là bắt buộc và tối đa 9 ký tự');
         err.status = 400;
@@ -197,9 +192,18 @@ function _validateEmployee({ uid, userId, name, password }) {
     }
 }
 
+function _validateEmployee({ uid, userId, name, password }) {
+    if (!uid || isNaN(uid) || uid < 1 || uid > 3000) {
+        const err = new Error('UID phải là số từ 1 đến 3000');
+        err.status = 400;
+        throw err;
+    }
+    _validateEmployeeFields({ userId, name, password });
+}
+
 async function createEmployee(deviceId, fields) {
-    const { uid, userId, name, password = '', role = 0, cardno = 0 } = fields;
-    _validateEmployee({ uid, userId, name, password });
+    const { userId, name, password = '', role = 0, cardno = 0 } = fields;
+    _validateEmployeeFields({ userId, name, password });
     const deviceRow = await getDeviceById(deviceId);
     const device = await _connectDevice(deviceRow).catch((e) => {
         const err = new Error(`Không thể kết nối tới thiết bị: ${e.message}`);
@@ -207,9 +211,23 @@ async function createEmployee(deviceId, fields) {
         throw err;
     });
     try {
-        await device.setUser(Number(uid), String(userId), String(name), String(password), Number(role), Number(cardno));
-        await zkEmployeeModel.insert(sqlite_db, deviceId, { uid: Number(uid), userId: String(userId), name: String(name), password: String(password), role: Number(role), cardno: Number(cardno) });
-        return { success: true };
+        const result = await device.getUsers();
+        const users = (result && result.data) ? result.data : [];
+        const usedUids = new Set(users.map(u => Number(u.uid)));
+
+        let newUid = 1;
+        while (usedUids.has(newUid)) {
+            newUid++;
+            if (newUid > 3000) {
+                const err = new Error('Không còn slot UID trống trên thiết bị (tối đa 3000)');
+                err.status = 400;
+                throw err;
+            }
+        }
+
+        await device.setUser(newUid, String(userId), String(name), String(password), Number(role), Number(cardno));
+        await zkEmployeeModel.insert(sqlite_db, deviceId, { uid: newUid, userId: String(userId), name: String(name), password: String(password), role: Number(role), cardno: Number(cardno) });
+        return { success: true, uid: newUid };
     } catch (e) {
         if (e.status) throw e;
         const err = new Error(`Lỗi tạo nhân viên: ${e.message}`);

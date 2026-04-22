@@ -346,6 +346,39 @@ body {
 
 input[readonly] { opacity: 0.5; cursor: not-allowed; }
 
+/* ── Toast notification ── */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 24px;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    background: var(--surface);
+    border: 1px solid rgba(74,222,128,0.35);
+    border-left: 3px solid var(--success);
+    border-radius: var(--radius);
+    color: var(--success);
+    font-size: 0.875rem;
+    font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    max-width: 360px;
+    animation: toast-in 0.22s ease;
+}
+.toast.hiding {
+    animation: toast-out 0.28s ease forwards;
+}
+@keyframes toast-in {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes toast-out {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(-10px); }
+}
+
 /* ── Empty state ── */
 .empty-state {
     text-align: center;

@@ -1,350 +1,373 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🕐 <%= device.name %> — ZKTeco</title>
     <link rel="stylesheet" href="/css/zkteco_device.css">
 </head>
+
 <body>
 
-<header class="page-header">
-    <a href="/zkteco" class="btn-back">← Danh sách</a>
-    <div class="header-info">
-        <h1>🕐 <%= device.name %></h1>
-        <div class="header-sub">
-            <span style="font-family:monospace"><%= device.ip %>:<%= device.port %></span>
-            <% if (device.location) { %><span><%= device.location %></span><% } %>
-            <span class="badge badge-<%= device.status === 'active' ? 'active' : 'inactive' %>">
-                <%= device.status === 'active' ? 'Hoạt động' : 'Không hoạt động' %>
-            </span>
-        </div>
-    </div>
-</header>
-
-<main class="main-container">
-
-    <!-- ── Kết nối & Thời gian ── -->
-    <div class="card">
-        <div class="card-title"><span>🔌 Kết nối &amp; Thời gian</span></div>
-
-        <div class="action-row">
-            <button class="btn btn-secondary" id="btnTest">🔌 Kiểm tra kết nối</button>
-            <button class="btn btn-secondary" id="btnShowSetTime">⏰ Đặt giờ</button>
-            <button class="btn btn-secondary" id="btnSyncTime">⟳ Đồng bộ giờ</button>
-        </div>
-
-        <div class="settime-inline hidden" id="setTimePanel">
-            <input type="datetime-local" id="dtInput">
-            <button class="btn btn-primary btn-sm" id="btnConfirmTime">Xác nhận</button>
-            <button class="btn btn-secondary btn-sm" id="btnCancelTime">Hủy</button>
-        </div>
-
-        <div id="connResult" class="hidden"></div>
-    </div>
-
-    <!-- ── Modal Sửa nhân viên ── -->
-    <div class="modal-overlay hidden" id="editModal">
-        <div class="modal">
-            <div class="modal-header">
-                <span class="modal-title">✏️ Sửa nhân viên</span>
-                <button class="modal-close" id="btnCloseModal">✕</button>
+    <header class="page-header">
+        <a href="/zkteco" class="btn-back">← Danh sách</a>
+        <div class="header-info">
+            <h1>🕐 <%= device.name %>
+            </h1>
+            <div class="header-sub">
+                <span style="font-family:monospace">
+                    <%= device.ip %>:<%= device.port %>
+                </span>
+                <% if (device.location) { %><span>
+                        <%= device.location %>
+                    </span>
+                    <% } %>
+                        <span class="badge badge-<%= device.status === 'active' ? 'active' : 'inactive' %>">
+                            <%= device.status==='active' ? 'Hoạt động' : 'Không hoạt động' %>
+                        </span>
             </div>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>UID (không thể thay đổi)</label>
-                    <input type="number" id="eUid" readonly>
-                </div>
-                <div class="form-group">
-                    <label>Mã nhân viên * (max 9 ký tự)</label>
-                    <input type="text" id="eUserId" maxlength="9">
-                </div>
-                <div class="form-group">
-                    <label>Họ tên * (max 24 ký tự)</label>
-                    <input type="text" id="eName" maxlength="24">
-                </div>
-                <div class="form-group">
-                    <label>Mật khẩu (max 8 ký tự)</label>
-                    <input type="text" id="ePassword" maxlength="8" placeholder="(để trống = không có mật khẩu)">
-                </div>
-                <div class="form-group">
-                    <label>Vai trò</label>
-                    <select id="eRole">
-                        <option value="0">User (0)</option>
-                        <option value="14">Admin (14)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Số thẻ RF</label>
-                    <input type="number" id="eCardno" min="0">
-                </div>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-primary" id="btnSaveEdit">💾 Lưu thay đổi</button>
-                <button class="btn btn-secondary" id="btnCancelEdit">Hủy</button>
-            </div>
-            <div id="editMsg" class="hidden"></div>
         </div>
-    </div>
+    </header>
 
-    <!-- ── Thêm nhân viên mới ── -->
-    <div class="card">
-        <div class="card-title"><span>➕ Thêm nhân viên mới</span></div>
+    <div id="toast" class="toast hidden"></div>
 
-        <div class="form-actions">
-            <button class="btn btn-primary btn-sm" id="btnToggleAddEmp">Thêm nhân viên mới</button>
+    <main class="main-container">
+
+        <!-- ── Kết nối & Thời gian ── -->
+        <div class="card">
+            <div class="card-title"><span>🔌 Kết nối &amp; Thời gian</span></div>
+
+            <div class="action-row">
+                <button class="btn btn-secondary" id="btnTest">🔌 Kiểm tra kết nối</button>
+                <button class="btn btn-secondary" id="btnShowSetTime">⏰ Đặt giờ</button>
+                <button class="btn btn-secondary" id="btnSyncTime">⟳ Đồng bộ giờ</button>
+            </div>
+
+            <div class="settime-inline hidden" id="setTimePanel">
+                <input type="datetime-local" id="dtInput">
+                <button class="btn btn-primary btn-sm" id="btnConfirmTime">Xác nhận</button>
+                <button class="btn btn-secondary btn-sm" id="btnCancelTime">Hủy</button>
+            </div>
+
+            <div id="connResult" class="hidden"></div>
         </div>
 
-        <div id="employeeFormArea" class="hidden">
-            <div class="form-grid">
-                <input type="hidden" id="fUid">
-                <div class="form-group">
-                    <label>Mã nhân viên * (max 9 ký tự)</label>
-                    <input type="text" id="fUserId" maxlength="9" placeholder="EMP001">
+        <!-- ── Modal Sửa nhân viên ── -->
+        <div class="modal-overlay hidden" id="editModal">
+            <div class="modal">
+                <div class="modal-header">
+                    <span class="modal-title">✏️ Sửa nhân viên</span>
+                    <button class="modal-close" id="btnCloseModal">✕</button>
                 </div>
-                <div class="form-group">
-                    <label>Họ tên * (max 24 ký tự)</label>
-                    <input type="text" id="fName" maxlength="24" placeholder="Nguyễn Văn A">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>UID (không thể thay đổi)</label>
+                        <input type="number" id="eUid" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Mã nhân viên * (max 9 ký tự)</label>
+                        <input type="text" id="eUserId" maxlength="9">
+                    </div>
+                    <div class="form-group">
+                        <label>Họ tên * (max 24 ký tự)</label>
+                        <input type="text" id="eName" maxlength="24">
+                    </div>
+                    <div class="form-group">
+                        <label>Mật khẩu (max 8 ký tự)</label>
+                        <input type="text" id="ePassword" maxlength="8" placeholder="(để trống = không có mật khẩu)">
+                    </div>
+                    <div class="form-group">
+                        <label>Vai trò</label>
+                        <select id="eRole">
+                            <option value="0">User (0)</option>
+                            <option value="14">Admin (14)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Số thẻ RF</label>
+                        <input type="number" id="eCardno" min="0">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Mật khẩu (max 8 ký tự)</label>
-                    <input type="text" id="fPassword" maxlength="8" placeholder="(trống = không có)">
+                <div class="modal-actions">
+                    <button class="btn btn-primary" id="btnSaveEdit">💾 Lưu thay đổi</button>
+                    <button class="btn btn-secondary" id="btnCancelEdit">Hủy</button>
                 </div>
-                <div class="form-group">
-                    <label>Vai trò</label>
-                    <select id="fRole">
-                        <option value="0">User (0)</option>
-                        <option value="14">Admin (14)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Số thẻ RF</label>
-                    <input type="number" id="fCardno" min="0" value="0" placeholder="0">
-                </div>
+                <div id="editMsg" class="hidden"></div>
             </div>
+        </div>
+
+        <!-- ── Thêm nhân viên mới ── -->
+        <div class="card">
+            <div class="card-title"><span>➕ Thêm nhân viên mới</span></div>
 
             <div class="form-actions">
-                <button class="btn btn-primary" id="btnAddEmp">➕ Thêm nhân viên</button>
-                <button class="btn btn-secondary" id="btnCancelAddEmp">Hủy</button>
+                <button class="btn btn-primary btn-sm" id="btnToggleAddEmp">Thêm nhân viên mới</button>
             </div>
-            <div id="addMsg" class="hidden"></div>
+
+            <div id="employeeFormArea" class="hidden">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Mã nhân viên * (max 9 ký tự)</label>
+                        <input type="text" id="fUserId" maxlength="9" placeholder="EMP001">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Họ tên * (max 24 ký tự)</label>
+                        <input type="text" id="fName" maxlength="24" placeholder="Nguyễn Văn A">
+                    </div>
+                    <div class="form-group">
+                        <label>Mật khẩu (max 8 ký tự)</label>
+                        <input type="text" id="fPassword" maxlength="8" placeholder="(trống = không có)">
+                    </div>
+                    <div class="form-group">
+                        <label>Vai trò</label>
+                        <select id="fRole">
+                            <option value="0">User (0)</option>
+                            <option value="14">Admin (14)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Số thẻ RF</label>
+                        <input type="number" id="fCardno" min="0" value="0" placeholder="0">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-primary" id="btnAddEmp">➕ Thêm nhân viên</button>
+                    <button class="btn btn-secondary" id="btnCancelAddEmp">Hủy</button>
+                </div>
+                <div id="addMsg" class="hidden"></div>
+            </div>
         </div>
-    </div>
 
-    <!-- ── Danh sách nhân viên ── -->
-    <div class="card">
-        <div class="card-title">
-            <span class="card-title-left">👥 Nhân viên</span>
-            <button class="btn btn-info btn-sm" id="btnSync">🔄 Đồng bộ từ máy</button>
+        <!-- ── Danh sách nhân viên ── -->
+        <div class="card">
+            <div class="card-title">
+                <span class="card-title-left">👥 Nhân viên</span>
+                <button class="btn btn-info btn-sm" id="btnSync">🔄 Đồng bộ từ máy</button>
+            </div>
+
+            <div class="emp-toolbar">
+                <input id="searchUserId" class="search-input" type="text" placeholder="Tìm theo Mã NV hoặc Họ tên...">
+                <div id="empCount" class="emp-count"></div>
+            </div>
+
+            <div id="empTableWrap">
+                <div class="empty-state">Nhấn <strong>Đồng bộ từ máy</strong> để tải danh sách hoặc dữ liệu chưa có.
+                </div>
+            </div>
+
+            <div id="syncInfo" class="sync-info hidden"></div>
+            <div id="syncMsg" class="hidden"></div>
         </div>
 
-        <div class="emp-toolbar">
-            <input id="searchUserId" class="search-input" type="text" placeholder="Tìm theo Mã NV hoặc Họ tên...">
-            <div id="empCount" class="emp-count"></div>
-        </div>
+    </main>
 
-        <div id="empTableWrap">
-            <div class="empty-state">Nhấn <strong>Đồng bộ từ máy</strong> để tải danh sách hoặc dữ liệu chưa có.</div>
-        </div>
-        
-        <div id="syncInfo" class="sync-info hidden"></div>
-        <div id="syncMsg" class="hidden"></div>
-    </div>
+    <script>
+        const DEVICE_ID = '<%= device.id %>';
+        const token = localStorage.getItem('token');
 
-</main>
+        // ── Auth check ──
+        (async function () {
+            if (!token) return location.href = '/login';
+            try {
+                const r = await fetch('/api/me', { headers: { Authorization: 'Bearer ' + token } });
+                if (!r.ok) return location.href = '/login';
+                const data = await r.json();
+                if (data.user.role !== 'admin') { alert('Chỉ admin mới được truy cập trang này'); location.href = '/menu'; }
+            } catch { location.href = '/login'; }
+        })();
 
-<script>
-const DEVICE_ID = '<%= device.id %>';
-const token = localStorage.getItem('token');
+        const adminHeaders = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token };
+        let employees = [];
+        let recentlyAddedUserIds = [];
+        let uidSortDirection = null; // null, 'asc', 'desc'
 
-// ── Auth check ──
-(async function() {
-    if (!token) return location.href = '/login';
-    try {
-        const r = await fetch('/api/me', { headers: { Authorization: 'Bearer ' + token } });
-        if (!r.ok) return location.href = '/login';
-        const data = await r.json();
-        if (data.user.role !== 'admin') { alert('Chỉ admin mới được truy cập trang này'); location.href = '/menu'; }
-    } catch { location.href = '/login'; }
-})();
+        let toastTimer;
+        function showToast(text) {
+            const t = document.getElementById('toast');
+            t.textContent = text;
+            t.classList.remove('hidden', 'hiding');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                t.classList.add('hiding');
+                t.addEventListener('animationend', () => t.classList.add('hidden'), { once: true });
+            }, 3000);
+        }
 
-const adminHeaders = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token };
-let employees = [];
-let recentlyAddedUserIds = [];
-let uidSortDirection = null; // null, 'asc', 'desc'
+        function showMsg(el, type, text) {
+            el.className = 'message ' + type;
+            el.textContent = text;
+            el.classList.remove('hidden');
+        }
+        function hideEl(el) { el.classList.add('hidden'); }
+        function showEl(el) { el.classList.remove('hidden'); }
 
-function showMsg(el, type, text) {
-    el.className = 'message ' + type;
-    el.textContent = text;
-    el.classList.remove('hidden');
-}
-function hideEl(el) { el.classList.add('hidden'); }
-function showEl(el) { el.classList.remove('hidden'); }
+        function showAddEmployeeForm() {
+            showEl(document.getElementById('employeeFormArea'));
+            hideEl(document.getElementById('btnToggleAddEmp'));
+        }
+        function hideAddEmployeeForm() {
+            hideEl(document.getElementById('employeeFormArea'));
+            showEl(document.getElementById('btnToggleAddEmp'));
+        }
 
-function showAddEmployeeForm() {
-    showEl(document.getElementById('employeeFormArea'));
-    hideEl(document.getElementById('btnToggleAddEmp'));
-}
-function hideAddEmployeeForm() {
-    hideEl(document.getElementById('employeeFormArea'));
-    showEl(document.getElementById('btnToggleAddEmp'));
-}
-
-// ── Test connection ──
-document.getElementById('btnTest').addEventListener('click', async function() {
-    const btn = this;
-    btn.disabled = true;
-    btn.textContent = 'Đang kiểm tra...';
-    const result = document.getElementById('connResult');
-    hideEl(result);
-    try {
-        const r = await fetch(`/api/zkteco/devices/${DEVICE_ID}/test`, { method: 'POST', headers: adminHeaders });
-        const data = await r.json();
-        if (data.success) {
-            result.className = 'result-panel success-panel';
-            result.innerHTML = `
+        // ── Test connection ──
+        document.getElementById('btnTest').addEventListener('click', async function () {
+            const btn = this;
+            btn.disabled = true;
+            btn.textContent = 'Đang kiểm tra...';
+            const result = document.getElementById('connResult');
+            hideEl(result);
+            try {
+                const r = await fetch(`/api/zkteco/devices/${DEVICE_ID}/test`, { method: 'POST', headers: adminHeaders });
+                const data = await r.json();
+                if (data.success) {
+                    result.className = 'result-panel success-panel';
+                    result.innerHTML = `
                 <div class="result-title">✅ Kết nối thành công</div>
                 <div class="info-grid">
                     <div class="info-row"><span class="info-label">Tên máy</span><span class="info-value">${data.deviceName || '—'}</span></div>
                     <div class="info-row"><span class="info-label">Serial</span><span class="info-value">${data.serialNumber || '—'}</span></div>
                     <div class="info-row"><span class="info-label">Firmware</span><span class="info-value">${data.firmware || '—'}</span></div>
                 </div>`;
-        } else {
-            result.className = 'result-panel error-panel';
-            result.innerHTML = `❌ ${data.error}`;
-        }
-        showEl(result);
-    } catch (e) {
-        result.className = 'result-panel error-panel';
-        result.innerHTML = '❌ Lỗi kết nối: ' + e.message;
-        showEl(result);
-    } finally {
-        btn.disabled = false;
-        btn.textContent = '🔌 Kiểm tra kết nối';
-    }
-});
-
-// ── Set time ──
-document.getElementById('btnShowSetTime').addEventListener('click', function() {
-    const panel = document.getElementById('setTimePanel');
-    panel.classList.toggle('hidden');
-});
-document.getElementById('btnCancelTime').addEventListener('click', function() {
-    hideEl(document.getElementById('setTimePanel'));
-});
-document.getElementById('btnConfirmTime').addEventListener('click', async function() {
-    const btn = this;
-    const val = document.getElementById('dtInput').value;
-    if (!val) { alert('Vui lòng chọn ngày giờ'); return; }
-    const datetime = val.replace('T', ' ') + ':00';
-    btn.disabled = true;
-    try {
-        const r = await fetch(`/api/zkteco/devices/${DEVICE_ID}/set-time`, {
-            method: 'POST', headers: adminHeaders, body: JSON.stringify({ datetime })
+                } else {
+                    result.className = 'result-panel error-panel';
+                    result.innerHTML = `❌ ${data.error}`;
+                }
+                showEl(result);
+            } catch (e) {
+                result.className = 'result-panel error-panel';
+                result.innerHTML = '❌ Lỗi kết nối: ' + e.message;
+                showEl(result);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔌 Kiểm tra kết nối';
+            }
         });
-        const data = await r.json();
-        const result = document.getElementById('connResult');
-        result.className = data.success ? 'result-panel success-panel' : 'result-panel error-panel';
-        result.innerHTML = data.success ? `✅ Đã đặt giờ: ${datetime}` : `❌ ${data.error}`;
-        showEl(result);
-        hideEl(document.getElementById('setTimePanel'));
-    } catch (e) {
-        alert('Lỗi: ' + e.message);
-    } finally {
-        btn.disabled = false;
-    }
-});
 
-// ── Sync time ──
-document.getElementById('btnSyncTime').addEventListener('click', async function() {
-    const btn = this;
-    btn.disabled = true;
-    btn.textContent = 'Đang đồng bộ...';
-    try {
-        const r = await fetch(`/api/zkteco/devices/${DEVICE_ID}/sync-time`, { method: 'POST', headers: adminHeaders });
-        const data = await r.json();
-        const result = document.getElementById('connResult');
-        result.className = data.success ? 'result-panel success-panel' : 'result-panel error-panel';
-        result.innerHTML = data.success
-            ? `✅ Đã đồng bộ giờ lúc: ${new Date(data.syncedAt).toLocaleString('vi-VN')}`
-            : `❌ ${data.error}`;
-        showEl(result);
-    } catch (e) {
-        alert('Lỗi: ' + e.message);
-    } finally {
-        btn.disabled = false;
-        btn.textContent = '⟳ Đồng bộ giờ';
-    }
-});
+        // ── Set time ──
+        document.getElementById('btnShowSetTime').addEventListener('click', function () {
+            const panel = document.getElementById('setTimePanel');
+            panel.classList.toggle('hidden');
+        });
+        document.getElementById('btnCancelTime').addEventListener('click', function () {
+            hideEl(document.getElementById('setTimePanel'));
+        });
+        document.getElementById('btnConfirmTime').addEventListener('click', async function () {
+            const btn = this;
+            const val = document.getElementById('dtInput').value;
+            if (!val) { alert('Vui lòng chọn ngày giờ'); return; }
+            const datetime = val.replace('T', ' ') + ':00';
+            btn.disabled = true;
+            try {
+                const r = await fetch(`/api/zkteco/devices/${DEVICE_ID}/set-time`, {
+                    method: 'POST', headers: adminHeaders, body: JSON.stringify({ datetime })
+                });
+                const data = await r.json();
+                const result = document.getElementById('connResult');
+                result.className = data.success ? 'result-panel success-panel' : 'result-panel error-panel';
+                result.innerHTML = data.success ? `✅ Đã đặt giờ: ${datetime}` : `❌ ${data.error}`;
+                showEl(result);
+                hideEl(document.getElementById('setTimePanel'));
+            } catch (e) {
+                alert('Lỗi: ' + e.message);
+            } finally {
+                btn.disabled = false;
+            }
+        });
 
-// ── Load employees from SQLite ──
-async function loadEmployees() {
-    try {
-        const r = await fetch(`/api/zkteco/devices/${DEVICE_ID}/employees`, { headers: adminHeaders });
-        const data = await r.json();
-        employees = data.employees || [];
-        renderEmployeeTable();
-    } catch (e) {
-        document.getElementById('empTableWrap').innerHTML = '<div class="empty-state">Lỗi tải dữ liệu.</div>';
-    }
-}
+        // ── Sync time ──
+        document.getElementById('btnSyncTime').addEventListener('click', async function () {
+            const btn = this;
+            btn.disabled = true;
+            btn.textContent = 'Đang đồng bộ...';
+            try {
+                const r = await fetch(`/api/zkteco/devices/${DEVICE_ID}/sync-time`, { method: 'POST', headers: adminHeaders });
+                const data = await r.json();
+                const result = document.getElementById('connResult');
+                result.className = data.success ? 'result-panel success-panel' : 'result-panel error-panel';
+                result.innerHTML = data.success
+                    ? `✅ Đã đồng bộ giờ lúc: ${new Date(data.syncedAt).toLocaleString('vi-VN')}`
+                    : `❌ ${data.error}`;
+                showEl(result);
+            } catch (e) {
+                alert('Lỗi: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '⟳ Đồng bộ giờ';
+            }
+        });
 
-function renderEmployeeTable() {
-    const wrap = document.getElementById('empTableWrap');
-    const searchValue = document.getElementById('searchUserId')?.value.trim().toLowerCase() || '';
-    const searchActive = Boolean(searchValue);
-
-    const ordered = [];
-
-    function parseNumericId(str) {
-        const digits = String(str || '').replace(/\D/g, '');
-        return digits ? parseInt(digits, 10) : NaN;
-    }
-    function compareUserId(a, b) {
-        const aNum = parseNumericId(a.user_id);
-        const bNum = parseNumericId(b.user_id);
-        if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) {
-            return aNum - bNum;
-        }
-        return a.user_id.localeCompare(b.user_id, 'vi', { sensitivity: 'base' });
-    }
-
-    if (uidSortDirection) {
-        ordered.push(...[...employees].sort((a, b) => {
-            const diff = compareUserId(a, b);
-            return uidSortDirection === 'asc' ? diff : -diff;
-        }));
-    } else {
-        const seen = new Set();
-        for (const userId of recentlyAddedUserIds) {
-            const item = employees.find(e => e.user_id === userId);
-            if (item) {
-                ordered.push(item);
-                seen.add(item.user_id);
+        // ── Load employees from SQLite ──
+        async function loadEmployees() {
+            try {
+                const r = await fetch(`/api/zkteco/devices/${DEVICE_ID}/employees`, { headers: adminHeaders });
+                const data = await r.json();
+                employees = data.employees || [];
+                renderEmployeeTable();
+            } catch (e) {
+                document.getElementById('empTableWrap').innerHTML = '<div class="empty-state">Lỗi tải dữ liệu.</div>';
             }
         }
-        const remaining = employees
-            .filter(e => !seen.has(e.user_id))
-            .sort((a, b) => b.user_id.localeCompare(a.user_id, 'vi', { sensitivity: 'base' }));
-        ordered.push(...remaining);
-    }
 
-    const filtered = searchActive
-        ? ordered.filter(e =>
-            e.user_id.toLowerCase().includes(searchValue) ||
-            e.name.toLowerCase().includes(searchValue)
-        )
-        : ordered;
+        function renderEmployeeTable() {
+            const wrap = document.getElementById('empTableWrap');
+            const searchValue = document.getElementById('searchUserId')?.value.trim().toLowerCase() || '';
+            const searchActive = Boolean(searchValue);
 
-    const countEl = document.getElementById('empCount');
-    countEl.textContent = filtered.length ? `${filtered.length} nhân viên` : '';
+            const ordered = [];
 
-    if (!filtered.length) {
-        wrap.innerHTML = `<div class="empty-state">${searchActive ? 'Không tìm thấy nhân viên theo Mã NV.' : 'Chưa có nhân viên. Nhấn <strong>Đồng bộ từ máy</strong> để tải.'}</div>`;
-        return;
-    }
+            function parseNumericId(str) {
+                const digits = String(str || '').replace(/\D/g, '');
+                return digits ? parseInt(digits, 10) : NaN;
+            }
+            function compareUserId(a, b) {
+                const aNum = parseNumericId(a.user_id);
+                const bNum = parseNumericId(b.user_id);
+                if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) {
+                    return aNum - bNum;
+                }
+                return a.user_id.localeCompare(b.user_id, 'vi', { sensitivity: 'base' });
+            }
 
-    const rows = filtered.map(e => `
+            if (uidSortDirection) {
+                ordered.push(...[...employees].sort((a, b) => {
+                    const diff = compareUserId(a, b);
+                    return uidSortDirection === 'asc' ? diff : -diff;
+                }));
+            } else {
+                const seen = new Set();
+                for (const userId of recentlyAddedUserIds) {
+                    const item = employees.find(e => e.user_id === userId);
+                    if (item) {
+                        ordered.push(item);
+                        seen.add(item.user_id);
+                    }
+                }
+                const remaining = employees
+                    .filter(e => !seen.has(e.user_id))
+                    .sort((a, b) => b.user_id.localeCompare(a.user_id, 'vi', { sensitivity: 'base' }));
+                ordered.push(...remaining);
+            }
+
+            const filtered = searchActive
+                ? ordered.filter(e =>
+                    e.user_id.toLowerCase().includes(searchValue) ||
+                    e.name.toLowerCase().includes(searchValue)
+                )
+                : ordered;
+
+            const countEl = document.getElementById('empCount');
+            countEl.textContent = filtered.length ? `${filtered.length} nhân viên` : '';
+
+            if (!filtered.length) {
+                wrap.innerHTML = `<div class="empty-state">${searchActive ? 'Không tìm thấy nhân viên theo Mã NV.' : 'Chưa có nhân viên. Nhấn <strong>Đồng bộ từ máy</strong> để tải.'}</div>`;
+                return;
+            }
+
+            const rows = filtered.map(e => `
         <tr>
             <td class="emp-uid">${e.uid}</td>
             <td class="emp-userid">${e.user_id}</td>
@@ -352,19 +375,19 @@ function renderEmployeeTable() {
             <td class="emp-role">${e.role === 14 ? 'Admin' : 'User'}</td>
             <td>${e.cardno || '—'}</td>
             <td class="emp-actions">
-                <button class="btn btn-warning btn-sm" onclick="openEditModal(${e.uid}, '${e.user_id.replace(/'/g,"\\'")}', '${e.name.replace(/'/g,"\\'")}', ${e.role}, ${e.cardno || 0})">
+                <button class="btn btn-warning btn-sm" onclick="openEditModal(${e.uid}, '${e.user_id.replace(/'/g, "\\'")}', '${e.name.replace(/'/g, "\\'")}', ${e.role}, ${e.cardno || 0})">
                     <span class="btn-icon">✏️</span>
                     <span class="btn-text">Sửa</span>
                 </button>
-                <button class="btn btn-danger btn-sm" onclick="deleteEmployee(${e.uid}, '${e.name.replace(/'/g,"\\'")}')">
+                <button class="btn btn-danger btn-sm" onclick="deleteEmployee(${e.uid}, '${e.name.replace(/'/g, "\\'")}')">
                     <span class="btn-icon">🗑️</span>
                     <span class="btn-text">Xóa</span>
                 </button>
             </td>
         </tr>
     `).join('');
-    const sortIcon = uidSortDirection === 'asc' ? '↑' : uidSortDirection === 'desc' ? '↓' : '↕';
-    wrap.innerHTML = `
+            const sortIcon = uidSortDirection === 'asc' ? '↑' : uidSortDirection === 'desc' ? '↓' : '↕';
+            wrap.innerHTML = `
         <table class="emp-table">
             <thead>
                 <tr>
@@ -382,191 +405,186 @@ function renderEmployeeTable() {
             <tbody>${rows}</tbody>
         </table>`;
 
-    const lastSynced = employees.reduce((acc, e) => e.synced_at > acc ? e.synced_at : acc, '');
-    if (lastSynced) {
-        const info = document.getElementById('syncInfo');
-        info.textContent = `Đồng bộ lần cuối: ${new Date(lastSynced).toLocaleString('vi-VN')}`;
-        showEl(info);
-    }
-}
-
-// ── Sync employees from device ──
-document.getElementById('btnSync').addEventListener('click', async function() {
-    const btn = this;
-    btn.disabled = true;
-    btn.textContent = '⏳ Đang đồng bộ...';
-    const msg = document.getElementById('syncMsg');
-    hideEl(msg);
-    try {
-        const r = await fetch(`/api/zkteco/devices/${DEVICE_ID}/employees/sync`, { method: 'POST', headers: adminHeaders });
-        const data = await r.json();
-        if (data.success) {
-            showMsg(msg, 'success', `✅ Đồng bộ thành công: ${data.count} nhân viên`);
-            await loadEmployees();
-        } else {
-            showMsg(msg, 'error', '❌ ' + data.error);
+            const lastSynced = employees.reduce((acc, e) => e.synced_at > acc ? e.synced_at : acc, '');
+            if (lastSynced) {
+                const info = document.getElementById('syncInfo');
+                info.textContent = `Đồng bộ lần cuối: ${new Date(lastSynced).toLocaleString('vi-VN')}`;
+                showEl(info);
+            }
         }
-    } catch (e) {
-        showMsg(msg, 'error', '❌ Lỗi: ' + e.message);
-    } finally {
-        btn.disabled = false;
-        btn.textContent = '🔄 Đồng bộ từ máy';
-    }
-});
 
-document.getElementById('searchUserId').addEventListener('input', renderEmployeeTable);
-
-function toggleUidSort() {
-    if (!uidSortDirection) {
-        uidSortDirection = 'asc';
-    } else if (uidSortDirection === 'asc') {
-        uidSortDirection = 'desc';
-    } else {
-        uidSortDirection = null;
-    }
-    renderEmployeeTable();
-}
-
-// ── Delete employee ──
-async function deleteEmployee(uid, name) {
-    if (!confirm(`Xóa nhân viên "${name}" (UID: ${uid}) khỏi thiết bị và hệ thống?`)) return;
-    try {
-        const r = await fetch(`/api/zkteco/devices/${DEVICE_ID}/employees/${uid}`, { method: 'DELETE', headers: adminHeaders });
-        const data = await r.json();
-        const msg = document.getElementById('syncMsg');
-        if (data.success) {
-            showMsg(msg, 'success', `✅ Đã xóa nhân viên UID ${uid}`);
-            await loadEmployees();
-        } else {
-            showMsg(msg, 'error', '❌ ' + data.error);
-        }
-    } catch (e) {
-        alert('Lỗi: ' + e.message);
-    }
-}
-
-// ── Add employee ──
-document.getElementById('btnToggleAddEmp').addEventListener('click', function() {
-    showAddEmployeeForm();
-});
-
-document.getElementById('fUserId').addEventListener('input', function() {
-    document.getElementById('fUid').value = this.value;
-});
-
-document.getElementById('btnCancelAddEmp').addEventListener('click', function() {
-    hideAddEmployeeForm();
-    hideEl(document.getElementById('addMsg'));
-});
-
-document.getElementById('btnAddEmp').addEventListener('click', async function() {
-    const btn = this;
-    const uid      = parseInt(document.getElementById('fUid').value);
-    const userId   = document.getElementById('fUserId').value.trim();
-    const name     = document.getElementById('fName').value.trim();
-    const password = document.getElementById('fPassword').value;
-    const role     = parseInt(document.getElementById('fRole').value);
-    const cardno   = parseInt(document.getElementById('fCardno').value) || 0;
-    const msg      = document.getElementById('addMsg');
-
-    hideEl(msg);
-    if (!userId || !name) { showMsg(msg, 'error', '❌ Vui lòng điền đầy đủ Mã NV và Họ tên'); return; }
-
-    btn.disabled = true;
-    btn.textContent = 'Đang thêm...';
-    try {
-        const r = await fetch(`/api/zkteco/devices/${DEVICE_ID}/employees`, {
-            method: 'POST',
-            headers: adminHeaders,
-            body: JSON.stringify({ uid, userId, name, password, role, cardno })
+        // ── Sync employees from device ──
+        document.getElementById('btnSync').addEventListener('click', async function () {
+            const btn = this;
+            btn.disabled = true;
+            btn.textContent = '⏳ Đang đồng bộ...';
+            const msg = document.getElementById('syncMsg');
+            hideEl(msg);
+            try {
+                const r = await fetch(`/api/zkteco/devices/${DEVICE_ID}/employees/sync`, { method: 'POST', headers: adminHeaders });
+                const data = await r.json();
+                if (data.success) {
+                    showMsg(msg, 'success', `✅ Đồng bộ thành công: ${data.count} nhân viên`);
+                    await loadEmployees();
+                } else {
+                    showMsg(msg, 'error', '❌ ' + data.error);
+                }
+            } catch (e) {
+                showMsg(msg, 'error', '❌ Lỗi: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔄 Đồng bộ từ máy';
+            }
         });
-        const data = await r.json();
-        if (data.success) {
-            recentlyAddedUserIds = [userId, ...recentlyAddedUserIds.filter(id => id !== userId)];
-            showMsg(msg, 'success', `✅ Đã thêm nhân viên "${name}" (UID: ${uid})`);
-            document.getElementById('fUserId').value = '';
-            document.getElementById('fUid').value = '';
-            document.getElementById('fName').value = '';
-            document.getElementById('fPassword').value = '';
-            document.getElementById('fCardno').value = '0';
-            document.getElementById('fRole').value = '0';
-            await loadEmployees();
+
+        document.getElementById('searchUserId').addEventListener('input', renderEmployeeTable);
+
+        function toggleUidSort() {
+            if (!uidSortDirection) {
+                uidSortDirection = 'asc';
+            } else if (uidSortDirection === 'asc') {
+                uidSortDirection = 'desc';
+            } else {
+                uidSortDirection = null;
+            }
+            renderEmployeeTable();
+        }
+
+        // ── Delete employee ──
+        async function deleteEmployee(uid, name) {
+            if (!confirm(`Xóa nhân viên "${name}" (UID: ${uid}) khỏi thiết bị và hệ thống?`)) return;
+            try {
+                const r = await fetch(`/api/zkteco/devices/${DEVICE_ID}/employees/${uid}`, { method: 'DELETE', headers: adminHeaders });
+                const data = await r.json();
+                const msg = document.getElementById('syncMsg');
+                if (data.success) {
+                    showMsg(msg, 'success', `✅ Đã xóa nhân viên UID ${uid}`);
+                    await loadEmployees();
+                } else {
+                    showMsg(msg, 'error', '❌ ' + data.error);
+                }
+            } catch (e) {
+                alert('Lỗi: ' + e.message);
+            }
+        }
+
+        // ── Add employee ──
+        document.getElementById('btnToggleAddEmp').addEventListener('click', function () {
+            showAddEmployeeForm();
+        });
+
+        document.getElementById('btnCancelAddEmp').addEventListener('click', function () {
             hideAddEmployeeForm();
-        } else {
-            showMsg(msg, 'error', '❌ ' + data.error);
-        }
-    } catch (e) {
-        showMsg(msg, 'error', '❌ Lỗi: ' + e.message);
-    } finally {
-        btn.disabled = false;
-        btn.textContent = '➕ Thêm nhân viên';
-    }
-});
-
-// ── Edit Employee Modal ──
-let editingUid = null;
-
-function openEditModal(uid, userId, name, role, cardno) {
-    editingUid = uid;
-    document.getElementById('eUid').value = uid;
-    document.getElementById('eUserId').value = userId;
-    document.getElementById('eName').value = name;
-    document.getElementById('ePassword').value = '';
-    document.getElementById('eRole').value = role;
-    document.getElementById('eCardno').value = cardno;
-    hideEl(document.getElementById('editMsg'));
-    showEl(document.getElementById('editModal'));
-}
-
-function closeEditModal() {
-    editingUid = null;
-    hideEl(document.getElementById('editModal'));
-}
-
-document.getElementById('btnCloseModal').addEventListener('click', closeEditModal);
-document.getElementById('btnCancelEdit').addEventListener('click', closeEditModal);
-document.getElementById('editModal').addEventListener('click', function(e) {
-    if (e.target === this) closeEditModal();
-});
-
-document.getElementById('btnSaveEdit').addEventListener('click', async function() {
-    const btn = this;
-    const userId   = document.getElementById('eUserId').value.trim();
-    const name     = document.getElementById('eName').value.trim();
-    const password = document.getElementById('ePassword').value;
-    const role     = parseInt(document.getElementById('eRole').value);
-    const cardno   = parseInt(document.getElementById('eCardno').value) || 0;
-    const msg      = document.getElementById('editMsg');
-
-    hideEl(msg);
-    if (!userId || !name) { showMsg(msg, 'error', '❌ Vui lòng điền đầy đủ Mã NV và Họ tên'); return; }
-
-    btn.disabled = true;
-    btn.textContent = 'Đang lưu...';
-    try {
-        const r = await fetch(`/api/zkteco/devices/${DEVICE_ID}/employees/${editingUid}`, {
-            method: 'PUT',
-            headers: adminHeaders,
-            body: JSON.stringify({ userId, name, password, role, cardno })
+            hideEl(document.getElementById('addMsg'));
         });
-        const data = await r.json();
-        if (data.success) {
-            closeEditModal();
-            showMsg(document.getElementById('syncMsg'), 'success', `✅ Đã cập nhật nhân viên "${name}" (UID: ${editingUid})`);
-            await loadEmployees();
-        } else {
-            showMsg(msg, 'error', '❌ ' + data.error);
-        }
-    } catch (e) {
-        showMsg(msg, 'error', '❌ Lỗi: ' + e.message);
-    } finally {
-        btn.disabled = false;
-        btn.textContent = '💾 Lưu thay đổi';
-    }
-});
 
-// Load employees on page init
-loadEmployees();
-</script>
+        document.getElementById('btnAddEmp').addEventListener('click', async function () {
+            const btn = this;
+            const userId = document.getElementById('fUserId').value.trim();
+            const name = document.getElementById('fName').value.trim();
+            const password = document.getElementById('fPassword').value;
+            const role = parseInt(document.getElementById('fRole').value);
+            const cardno = parseInt(document.getElementById('fCardno').value) || 0;
+            const msg = document.getElementById('addMsg');
+
+            hideEl(msg);
+            if (!userId || !name) { showMsg(msg, 'error', '❌ Vui lòng điền đầy đủ Mã NV và Họ tên'); return; }
+
+            btn.disabled = true;
+            btn.textContent = 'Đang thêm...';
+            try {
+                const r = await fetch(`/api/zkteco/devices/${DEVICE_ID}/employees`, {
+                    method: 'POST',
+                    headers: adminHeaders,
+                    body: JSON.stringify({ userId, name, password, role, cardno })
+                });
+                const data = await r.json();
+                if (data.success) {
+                    recentlyAddedUserIds = [userId, ...recentlyAddedUserIds.filter(id => id !== userId)];
+                    showToast(`✅ Đã thêm "${name}" — UID: ${data.uid}`);
+                    document.getElementById('fUserId').value = '';
+                    document.getElementById('fName').value = '';
+                    document.getElementById('fPassword').value = '';
+                    document.getElementById('fCardno').value = '0';
+                    document.getElementById('fRole').value = '0';
+                    await loadEmployees();
+                    hideAddEmployeeForm();
+                } else {
+                    showMsg(msg, 'error', '❌ ' + data.error);
+                }
+            } catch (e) {
+                showMsg(msg, 'error', '❌ Lỗi: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '➕ Thêm nhân viên';
+            }
+        });
+
+        // ── Edit Employee Modal ──
+        let editingUid = null;
+
+        function openEditModal(uid, userId, name, role, cardno) {
+            editingUid = uid;
+            document.getElementById('eUid').value = uid;
+            document.getElementById('eUserId').value = userId;
+            document.getElementById('eName').value = name;
+            document.getElementById('ePassword').value = '';
+            document.getElementById('eRole').value = role;
+            document.getElementById('eCardno').value = cardno;
+            hideEl(document.getElementById('editMsg'));
+            showEl(document.getElementById('editModal'));
+        }
+
+        function closeEditModal() {
+            editingUid = null;
+            hideEl(document.getElementById('editModal'));
+        }
+
+        document.getElementById('btnCloseModal').addEventListener('click', closeEditModal);
+        document.getElementById('btnCancelEdit').addEventListener('click', closeEditModal);
+        document.getElementById('editModal').addEventListener('click', function (e) {
+            if (e.target === this) closeEditModal();
+        });
+
+        document.getElementById('btnSaveEdit').addEventListener('click', async function () {
+            const btn = this;
+            const userId = document.getElementById('eUserId').value.trim();
+            const name = document.getElementById('eName').value.trim();
+            const password = document.getElementById('ePassword').value;
+            const role = parseInt(document.getElementById('eRole').value);
+            const cardno = parseInt(document.getElementById('eCardno').value) || 0;
+            const msg = document.getElementById('editMsg');
+
+            hideEl(msg);
+            if (!userId || !name) { showMsg(msg, 'error', '❌ Vui lòng điền đầy đủ Mã NV và Họ tên'); return; }
+
+            btn.disabled = true;
+            btn.textContent = 'Đang lưu...';
+            try {
+                const r = await fetch(`/api/zkteco/devices/${DEVICE_ID}/employees/${editingUid}`, {
+                    method: 'PUT',
+                    headers: adminHeaders,
+                    body: JSON.stringify({ userId, name, password, role, cardno })
+                });
+                const data = await r.json();
+                if (data.success) {
+                    closeEditModal();
+                    showMsg(document.getElementById('syncMsg'), 'success', `✅ Đã cập nhật nhân viên "${name}" (UID: ${editingUid})`);
+                    await loadEmployees();
+                } else {
+                    showMsg(msg, 'error', '❌ ' + data.error);
+                }
+            } catch (e) {
+                showMsg(msg, 'error', '❌ Lỗi: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '💾 Lưu thay đổi';
+            }
+        });
+
+        // Load employees on page init
+        loadEmployees();
+    </script>
 </body>
+
 </html>

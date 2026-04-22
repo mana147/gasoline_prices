@@ -112,8 +112,8 @@ async function syncEmployees(req, res) {
 
 async function createEmployee(req, res) {
     try {
-        const { uid, userId, name, password, role, cardno } = req.body;
-        const result = await zktecoService.createEmployee(req.params.id, { uid, userId, name, password, role, cardno });
+        const { userId, name, password, role, cardno } = req.body;
+        const result = await zktecoService.createEmployee(req.params.id, { userId, name, password, role, cardno });
         res.status(201).json({ ...result, message: 'Thêm nhân viên thành công' });
     } catch (err) {
         handleServiceError(err, res, 'Lỗi thêm nhân viên');
