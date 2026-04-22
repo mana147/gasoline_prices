@@ -302,13 +302,15 @@
 
         // ── Load employees from SQLite ──
         async function loadEmployees() {
+            const wrap = document.getElementById('empTableWrap');
+            wrap.innerHTML = '<div class="loading-state"><span class="loading-spinner"></span>Đang tải danh sách nhân viên...</div>';
             try {
                 const r = await fetch(`/api/zkteco/devices/${DEVICE_ID}/employees`, { headers: adminHeaders });
                 const data = await r.json();
                 employees = data.employees || [];
                 renderEmployeeTable();
             } catch (e) {
-                document.getElementById('empTableWrap').innerHTML = '<div class="empty-state">Lỗi tải dữ liệu.</div>';
+                wrap.innerHTML = '<div class="empty-state">Lỗi tải dữ liệu.</div>';
             }
         }
 
