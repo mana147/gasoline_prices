@@ -68,4 +68,50 @@ async function connectMSSQL() {
     }
 }
 
-module.exports = { sqlite_db, mssqlConfig, connectMSSQL };
+const WIFI_DB_PATH = process.env.WIFI_DB_PATH || './database/wifi_moni.db';
+
+const sqlite_wifi_db = new sqlite3.Database(WIFI_DB_PATH, (err) => {
+    if (err) {
+        console.error('> ERROR: Could not connect to WiFi database:', err.message);
+        return;
+    }
+    console.log('> LOG: Connected to WiFi database -' + WIFI_DB_PATH);
+    sqlite_wifi_db.serialize(() => {
+        sqlite_wifi_db.run(`
+            CREATE TABLE IF NOT EXISTS wifi_aps (
+                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                name             TEXT NOT NULL,
+                ip               TEXT NOT NULL,
+                location         TEXT,
+                snmp_community   TEXT DEFAULT 'public',
+                snmp_client_oid  TEXT,
+                status           TEXT DEFAULT 'active',
+                last_status      TEXT DEFAULT 'unknown',
+                last_ping_ms     INTEGER,
+                last_clients     INTEGER,
+                last_uptime_sec  INTEGER,
+                last_checked_at  TEXT,
+                created_at       TEXT,
+                updated_at       TEXT
+            )
+        `, (e) => {
+            if (e) console.error('> ERROR: Could not create wifi_aps table:', e.message);
+            else console.log('> LOG: Table wifi_aps ready');
+        });
+
+        sqlite_wifi_db.run(`
+            CREATE TABLE IF NOT EXISTS wifi_events (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                ap_id       INTEGER NOT NULL,
+                event_type  TEXT NOT NULL,
+                ping_ms     INTEGER,
+                checked_at  TEXT NOT NULL
+            )
+        `, (e) => {
+            if (e) console.error('> ERROR: Could not create wifi_events table:', e.message);
+            else console.log('> LOG: Table wifi_events ready');
+        });
+    });
+});
+
+module.exports = { sqlite_db, sqlite_wifi_db, mssqlConfig, connectMSSQL };

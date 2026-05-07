@@ -7,6 +7,7 @@ const authRouter = require('./routes/auth.routes');
 const fuelRouter = require('./routes/fuel.routes');
 const rateRouter = require('./routes/rate.routes');
 const zktecoRouter = require('./routes/zkteco.routes');
+const wifiRouter   = require('./routes/wifi.routes');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -30,8 +31,10 @@ app.use('/', authRouter);
 app.use('/', fuelRouter);
 app.use('/', rateRouter);
 app.use('/', zktecoRouter);
+app.use('/', wifiRouter);
 
 app.get('/zkteco', (_req, res) => res.render('zkteco'));
+app.get('/wifi',   (_req, res) => res.render('wifi'));
 
 app.use(errorHandler);
 

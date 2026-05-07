@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring WiFi - MPC Service</title>
+    <link rel="stylesheet" href="/css/wifi.css">
+</head>
+<body>
+
+    <header class="page-header">
+        <a href="/menu" class="btn-back">← Menu</a>
+        <div class="header-title">
+            <h1>📡 Monitoring WiFi AP</h1>
+            <p>Giám sát trạng thái và thông số các bộ phát WiFi trong hệ thống</p>
+        </div>
+        <div class="header-user" id="headerUser"></div>
+    </header>
+
+    <main class="main-container">
+
+        <!-- Form thêm / sửa AP -->
+        <div class="card">
+            <div class="card-title">📡 <span id="formTitle">Thêm AP mới</span></div>
+            <div class="form-actions" style="margin-top:0">
+                <button class="btn btn-primary btn-sm" id="btnToggleForm" onclick="showForm()">+ Thêm AP mới</button>
+            </div>
+            <div id="apFormArea" class="hidden">
+                <div class="form-grid" style="margin-top:16px">
+                    <div class="form-group">
+                        <label>Tên AP *</label>
+                        <input type="text" id="fName" placeholder="VD: TC15">
+                    </div>
+                    <div class="form-group">
+                        <label>Địa chỉ IP *</label>
+                        <input type="text" id="fIp" placeholder="172.16.82.2">
+                    </div>
+                    <div class="form-group">
+                        <label>Vị trí</label>
+                        <input type="text" id="fLocation" placeholder="VD: Tầng 1 - Khu A">
+                    </div>
+                    <div class="form-group">
+                        <label>SNMP Community</label>
+                        <input type="text" id="fCommunity" placeholder="public" value="public">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2">
+                        <label>OID Client Count</label>
+                        <input type="text" id="fClientOid" placeholder="1.3.6.1.4.1.27586.7.4.2.2.1.6">
+                        <span class="form-hint">Altai SuperWifi: 1.3.6.1.4.1.27586.7.4.2.2.1.6 — để trống nếu chưa biết</span>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-primary" id="btnSubmit" onclick="submitForm()">Thêm AP</button>
+                    <button class="btn btn-secondary hidden" id="btnCancel" onclick="cancelEdit()">Hủy</button>
+                </div>
+                <div id="formMessage" class="message hidden"></div>
+            </div>
+        </div>
+
+        <!-- Danh sách AP -->
+        <div class="card">
+            <div class="table-header">
+                <div class="card-title" style="margin-bottom:0">📶 Danh sách AP</div>
+                <div class="table-actions">
+                    <span class="refresh-note" id="refreshNote"></span>
+                    <button class="btn btn-secondary btn-sm" onclick="pollAll()">⚡ Poll tất cả</button>
+                    <button class="btn btn-secondary btn-sm" onclick="loadAps()">🔄 Làm mới</button>
+                </div>
+            </div>
+            <div id="apListMsg" class="message hidden"></div>
+            <div id="apContainer">
+                <div class="empty-state">
+                    <span style="font-size:2rem">📡</span>
+                    <p>Đang tải danh sách AP...</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal: Lịch sử sự kiện -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>📋 Lịch sử — <span id="modalApName"></span></h3>
+                <button class="modal-close" onclick="closeModalBtn()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="modalContent">
+                    <div class="empty-state"><p>Đang tải...</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── Helpers ──────────────────────────────────────────────────────────
+        const API = (path, opts = {}) => {
+            const token = localStorage.getItem('token');
+            return fetch(path, {
+                ...opts,
+                headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', ...(opts.headers || {}) }
+            });
+        };
+
+        function esc(str) {
+            return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function showMsg(id, text, type) {
+            const el = document.getElementById(id);
+            el.className = 'message ' + type;
+            el.textContent = text;
+        }
+        function hideMsg(id) { document.getElementById(id).className = 'message hidden'; }
+
+        function formatUptime(sec) {
+            if (!sec && sec !== 0) return '—';
+            const d = Math.floor(sec / 86400);
+            const h = Math.floor((sec % 86400) / 3600);
+            const m = Math.floor((sec % 3600) / 60);
+            if (d > 0) return `${d}d ${h}h`;
+            if (h > 0) return `${h}h ${m}m`;
+            return `${m}m`;
+        }
+
+        function formatTime(iso) {
+            if (!iso) return '—';
+            const d = new Date(iso);
+            return d.toLocaleString('vi-VN', { hour12: false });
+        }
+
+        function statusBadge(s) {
+            if (s === 'up')      return `<div class="status-wrap"><span class="status-dot dot-up"></span><span class="badge-up">Online</span></div>`;
+            if (s === 'down')    return `<div class="status-wrap"><span class="status-dot dot-down"></span><span class="badge-down">Offline</span></div>`;
+            return `<div class="status-wrap"><span class="status-dot dot-unknown"></span><span class="badge-unknown">Chưa biết</span></div>`;
+        }
+
+        // ── Form ──────────────────────────────────────────────────────────────
+        let editingId = null;
+
+        function showForm() {
+            document.getElementById('apFormArea').classList.remove('hidden');
+            document.getElementById('btnToggleForm').classList.add('hidden');
+            document.getElementById('btnCancel').classList.remove('hidden');
+        }
+
+        function hideForm() {
+            document.getElementById('apFormArea').classList.add('hidden');
+            document.getElementById('btnToggleForm').classList.remove('hidden');
+            document.getElementById('btnCancel').classList.add('hidden');
+        }
+
+        function cancelEdit() {
+            editingId = null;
+            document.getElementById('formTitle').textContent = 'Thêm AP mới';
+            document.getElementById('btnSubmit').textContent = 'Thêm AP';
+            ['fName','fIp','fLocation','fClientOid'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('fCommunity').value = 'public';
+            hideMsg('formMessage');
+            hideForm();
+        }
+
+        function startEdit(ap) {
+            editingId = ap.id;
+            document.getElementById('formTitle').textContent = 'Cập nhật AP';
+            document.getElementById('btnSubmit').textContent = 'Lưu thay đổi';
+            document.getElementById('fName').value     = ap.name || '';
+            document.getElementById('fIp').value       = ap.ip || '';
+            document.getElementById('fLocation').value = ap.location || '';
+            document.getElementById('fCommunity').value   = ap.snmp_community || 'public';
+            document.getElementById('fClientOid').value   = ap.snmp_client_oid || '';
+            showForm();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function submitForm() {
+            const body = {
+                name:            document.getElementById('fName').value.trim(),
+                ip:              document.getElementById('fIp').value.trim(),
+                location:        document.getElementById('fLocation').value.trim() || null,
+                snmp_community:  document.getElementById('fCommunity').value.trim() || 'public',
+                snmp_client_oid: document.getElementById('fClientOid').value.trim() || null,
+            };
+            hideMsg('formMessage');
+            const btn = document.getElementById('btnSubmit');
+            btn.disabled = true;
+            try {
+                const url    = editingId ? `/api/wifi/aps/${editingId}` : '/api/wifi/aps';
+                const method = editingId ? 'PUT' : 'POST';
+                const res    = await API(url, { method, body: JSON.stringify(body) });
+                const data   = await res.json();
+                if (data.success) {
+                    showMsg('formMessage', data.message, 'success');
+                    cancelEdit();
+                    loadAps();
+                } else {
+                    showMsg('formMessage', data.error || 'Lỗi không xác định', 'error');
+                }
+            } catch (e) {
+                showMsg('formMessage', 'Lỗi kết nối server', 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // ── Check / Delete / Poll ─────────────────────────────────────────────
+        async function checkAp(id, name) {
+            const btn = document.getElementById('btn-check-' + id);
+            if (btn) { btn.disabled = true; btn.textContent = '...'; }
+            try {
+                const res  = await API(`/api/wifi/aps/${id}/check`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    showMsg('apListMsg', `${name}: ${data.status === 'up' ? 'Online' : 'Offline'} — ping ${data.ping_ms ?? '—'}ms`, data.status === 'up' ? 'success' : 'error');
+                    loadAps();
+                } else {
+                    showMsg('apListMsg', data.error || 'Lỗi kiểm tra', 'error');
+                }
+            } catch (e) {
+                showMsg('apListMsg', 'Lỗi kết nối server', 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = '📶'; }
+            }
+        }
+
+        async function deleteAp(id, name) {
+            if (!confirm(`Xóa AP "${name}"?\nThao tác này sẽ xóa toàn bộ lịch sử sự kiện.`)) return;
+            try {
+                const res  = await API(`/api/wifi/aps/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    showMsg('apListMsg', 'Đã xóa AP thành công', 'success');
+                    loadAps();
+                } else {
+                    showMsg('apListMsg', data.error || 'Lỗi xóa AP', 'error');
+                }
+            } catch (e) {
+                showMsg('apListMsg', 'Lỗi kết nối server', 'error');
+            }
+        }
+
+        async function pollAll() {
+            try {
+                const res  = await API('/api/wifi/poll', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    showMsg('apListMsg', 'Đã kích hoạt poll — kết quả sẽ cập nhật sau vài giây', 'info');
+                    setTimeout(loadAps, 4000);
+                }
+            } catch (e) {
+                showMsg('apListMsg', 'Lỗi kết nối server', 'error');
+            }
+        }
+
+        // ── Event history modal ───────────────────────────────────────────────
+        async function showHistory(id, name) {
+            document.getElementById('modalApName').textContent = name;
+            document.getElementById('modalContent').innerHTML = '<div class="empty-state"><p>Đang tải...</p></div>';
+            document.getElementById('modalOverlay').classList.add('open');
+
+            try {
+                const res  = await API(`/api/wifi/aps/${id}/events`);
+                const data = await res.json();
+                if (!data.success || !data.events.length) {
+                    document.getElementById('modalContent').innerHTML = '<div class="empty-state"><p>Chưa có sự kiện nào.</p></div>';
+                    return;
+                }
+                const rows = data.events.map(e => `
+                    <tr>
+                        <td>${esc(formatTime(e.checked_at))}</td>
+                        <td class="${e.event_type === 'up' ? 'event-up' : 'event-down'}">${e.event_type === 'up' ? '🟢 Online' : '🔴 Offline'}</td>
+                        <td class="metric-val">${e.ping_ms != null ? e.ping_ms + ' ms' : '—'}</td>
+                    </tr>`).join('');
+                document.getElementById('modalContent').innerHTML = `
+                    <table class="event-table">
+                        <thead><tr><th>Thời gian</th><th>Sự kiện</th><th>Ping</th></tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>`;
+            } catch (e) {
+                document.getElementById('modalContent').innerHTML = '<div class="empty-state"><p>Lỗi tải dữ liệu.</p></div>';
+            }
+        }
+
+        function closeModal(e) { if (e.target === document.getElementById('modalOverlay')) closeModalBtn(); }
+        function closeModalBtn() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+        // ── Render table ──────────────────────────────────────────────────────
+        function renderAps(aps) {
+            const container = document.getElementById('apContainer');
+            if (!aps.length) {
+                container.innerHTML = `<div class="empty-state"><span style="font-size:2rem">📡</span><p>Chưa có AP nào. Thêm AP đầu tiên ở trên.</p></div>`;
+                return;
+            }
+            const rows = aps.map(ap => `
+                <tr>
+                    <td data-label="Tên AP">
+                        <div class="ap-name">${esc(ap.name)}</div>
+                        ${ap.location ? `<div class="ap-loc">${esc(ap.location)}</div>` : ''}
+                    </td>
+                    <td data-label="IP"><span class="ap-ip">${esc(ap.ip)}</span></td>
+                    <td data-label="Trạng thái">${statusBadge(ap.last_status)}</td>
+                    <td data-label="Ping" class="metric-val">${ap.last_ping_ms != null ? ap.last_ping_ms + ' ms' : '<span class="metric-na">—</span>'}</td>
+                    <td data-label="Client" class="metric-val">${ap.last_clients != null ? ap.last_clients : '<span class="metric-na">—</span>'}</td>
+                    <td data-label="Uptime" class="metric-val">${ap.last_uptime_sec != null ? formatUptime(ap.last_uptime_sec) : '<span class="metric-na">—</span>'}</td>
+                    <td data-label="Kiểm tra lúc" style="font-size:0.78rem;color:var(--text-muted)">${ap.last_checked_at ? formatTime(ap.last_checked_at) : '—'}</td>
+                    <td data-label="Thao tác">
+                        <div class="action-group">
+                            <button id="btn-check-${ap.id}" class="btn btn-secondary btn-sm" onclick="checkAp(${ap.id},'${esc(ap.name).replace(/'/g,"\\'")}')">📶</button>
+                            <button class="btn btn-secondary btn-sm" onclick="showHistory(${ap.id},'${esc(ap.name).replace(/'/g,"\\'")}')">📋</button>
+                            <button class="btn btn-secondary btn-sm" onclick='startEdit(${JSON.stringify(ap)})'>✏️</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteAp(${ap.id},'${esc(ap.name).replace(/'/g,"\\'")}')">🗑️</button>
+                        </div>
+                    </td>
+                </tr>`).join('');
+
+            container.innerHTML = `
+                <table class="ap-table">
+                    <thead>
+                        <tr>
+                            <th>Tên AP</th>
+                            <th>IP</th>
+                            <th>Trạng thái</th>
+                            <th>Ping</th>
+                            <th>Client</th>
+                            <th>Uptime</th>
+                            <th>Kiểm tra lúc</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>`;
+        }
+
+        // ── Load APs + auto-refresh ───────────────────────────────────────────
+        async function loadAps() {
+            hideMsg('apListMsg');
+            try {
+                const res = await API('/api/wifi/aps');
+                if (res.status === 401 || res.status === 403) { window.location.href = '/login'; return; }
+                const data = await res.json();
+                if (data.success) {
+                    renderAps(data.aps);
+                    document.getElementById('refreshNote').textContent = 'Cập nhật lúc ' + new Date().toLocaleTimeString('vi-VN');
+                } else {
+                    showMsg('apListMsg', data.error || 'Lỗi tải danh sách', 'error');
+                }
+            } catch (e) {
+                showMsg('apListMsg', 'Lỗi kết nối server', 'error');
+            }
+        }
+
+        // Auto-refresh mỗi 30 giây
+        setInterval(loadAps, 30000);
+
+        // ── Init ──────────────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', async function () {
+            const token = localStorage.getItem('token');
+            if (!token) { window.location.href = '/login'; return; }
+            try {
+                const res = await fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } });
+                if (!res.ok) { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; return; }
+                const data = await res.json();
+                if (!data.user || data.user.role !== 'admin') {
+                    alert('Tính năng này chỉ dành cho Admin.');
+                    window.location.href = '/menu';
+                    return;
+                }
+                const u = data.user;
+                document.getElementById('headerUser').textContent = (u.full_name || u.username || '') + ' (Admin)';
+            } catch (e) {
+                window.location.href = '/login'; return;
+            }
+            loadAps();
+        });
+    </script>
+
+</body>
+</html>

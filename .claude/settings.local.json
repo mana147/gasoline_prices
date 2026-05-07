@@ -9,7 +9,29 @@
       "WebFetch(domain:github.com)",
       "Bash(npm install *)",
       "WebSearch",
-      "Bash(node scripts/test_zkteco_users.js)"
+      "Bash(node scripts/test_zkteco_users.js)",
+      "Bash(node scripts/test_snmp_walk.js 172.16.82.2 public)",
+      "Bash(node scripts/test_snmp_clients.js public)",
+      "Bash(node main.js)",
+      "Bash(kill %1)",
+      "Bash(sqlite3 database/fuel_data.db \".tables\")",
+      "Bash(node -e ' *)",
+      "Bash(sqlite3 database/fuel_data.db \"SELECT username, password, role FROM users LIMIT 5;\")",
+      "Bash(pkill -f \"node main.js\")",
+      "Bash(wait)",
+      "Bash(sqlite3 database/fuel_data.db ' *)",
+      "Bash(sqlite3 database/fuel_data.db \"SELECT COUNT\\(*\\) || ' events' FROM wifi_events;\")",
+      "Bash(curl -s -o /dev/null -w \"GET /wifi → HTTP %{http_code}\\\\n\" http://localhost:8000/wifi)",
+      "Bash(curl -s -o /dev/null -w \"GET /menu → HTTP %{http_code}\\\\n\" http://localhost:8000/menu)",
+      "Bash(wait %1)",
+      "Bash(sqlite3 database/wifi_moni.db \".tables\")",
+      "Bash(curl -s -X POST http://localhost:8000/api/login -H 'Content-Type: application/json' -d '{\"username\":\"admin\",\"password\":\"Mpc@123\"}')",
+      "Bash(node scripts/migrate_wifi_db.js)",
+      "Bash(sqlite3 database/wifi_moni.db \"SELECT id, name, ip, last_status FROM wifi_aps ORDER BY id;\")",
+      "Bash(sqlite3 database/wifi_moni.db \"SELECT COUNT\\(*\\) || ' events' FROM wifi_events;\")",
+      "Bash(node scripts/test_snmp_wifi.js public 172.16.10.21 172.16.10.20 172.16.10.19 172.16.10.18 172.16.10.17 172.16.10.16)",
+      "Bash(node scripts/test_snmp_clients.js public 172.16.10.21 172.16.10.20 172.16.10.19 172.16.10.18 172.16.10.17 172.16.10.16)",
+      "Bash(sqlite3 database/wifi_moni.db \"SELECT id, name, ip, last_status, last_clients FROM wifi_aps ORDER BY name ASC;\")"
     ]
   }
 }

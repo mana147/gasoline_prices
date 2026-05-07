@@ -38,25 +38,30 @@ gasoline_prices/
 │   │   ├── auth.routes.js           # Routes: /login, /api/login, /api/users, ...
 │   │   ├── fuel.routes.js           # Routes: /api/get_fuel_price, /api/get_surcharge_table
 │   │   ├── rate.routes.js           # Routes: /api/get_trf_std, /api/update_trf_std
-│   │   └── zkteco.routes.js         # Routes: /api/zkteco/devices (CRUD) + /test + /set-time + /sync-time
+│   │   ├── zkteco.routes.js         # Routes: /api/zkteco/devices (CRUD) + /test + /set-time + /sync-time
+│   │   └── wifi.routes.js           # Routes: /api/wifi/aps (CRUD) + /check + /events + /poll
 │   │
 │   ├── controllers/
 │   │   ├── auth.controller.js       # Handlers: login, logout, register, user CRUD; render login.ejs
 │   │   ├── fuel.controller.js       # Handlers: getFuelPrice, getSurchargeTable
 │   │   ├── rate.controller.js       # Handlers: getTrfStd, updateTrfStd
-│   │   └── zkteco.controller.js     # Handlers: getDevices, addDevice, editDevice, removeDevice, testConnection, setTime, syncTime
+│   │   ├── zkteco.controller.js     # Handlers: getDevices, addDevice, editDevice, removeDevice, testConnection, setTime, syncTime
+│   │   └── wifi.controller.js       # Handlers: getAps, addAp, editAp, removeAp, checkAp, getEvents, pollAll
 │   │
 │   ├── services/
 │   │   ├── fuel.service.js          # Logic: gọi API ngoài + tính 6 loại container
 │   │   ├── rate.service.js          # Logic: đọc/cập nhật TRF_STD, validate trf_code
-│   │   └── zkteco.service.js        # Logic: CRUD validate, ZKTeco socket connection, đặt/đồng bộ giờ
+│   │   ├── zkteco.service.js        # Logic: CRUD validate, ZKTeco socket connection, đặt/đồng bộ giờ
+│   │   └── wifi.service.js          # Logic: ping + SNMP check, pollAll, startPolling (background)
 │   │
 │   ├── models/
 │   │   ├── user.model.js            # SQLite: CRUD bảng users (8 hàm promisified)
 │   │   ├── fuelPrice.model.js       # SQLite: INSERT/SELECT bảng fuel_prices
 │   │   ├── rate.model.js            # SQL Server: SELECT/UPDATE bảng TRF_STD
 │   │   ├── zkteco.model.js          # SQLite: CRUD bảng zkteco_devices (5 hàm promisified)
-│   │   └── zkEmployee.model.js      # SQLite: CRUD bảng zkteco_employees (5 hàm promisified)
+│   │   ├── zkEmployee.model.js      # SQLite: CRUD bảng zkteco_employees (5 hàm promisified)
+│   │   ├── wifiAp.model.js          # SQLite: CRUD bảng wifi_aps (6 hàm promisified)
+│   │   └── wifiEvent.model.js       # SQLite: INSERT/SELECT bảng wifi_events (2 hàm)
 │   │
 │   ├── middleware/
 │   │   ├── auth.js                  # Token store (Map), generateToken, authMiddleware, adminMiddleware
@@ -70,7 +75,8 @@ gasoline_prices/
 │       ├── menu.ejs                 # Trang menu trung gian sau đăng nhập (chọn tool)
 │       ├── login.ejs                # Trang đăng nhập
 │       ├── zkteco.ejs               # Danh sách thiết bị ZKTeco (CRUD thiết bị)
-│       └── zkteco_device.ejs        # Chi tiết thiết bị: kết nối, thời gian, quản lý nhân viên
+│       ├── zkteco_device.ejs        # Chi tiết thiết bị: kết nối, thời gian, quản lý nhân viên
+│       └── wifi.ejs                 # Monitoring WiFi AP: bảng status, form CRUD, modal lịch sử
 │
 ├── public/
 │   ├── css/
@@ -78,14 +84,28 @@ gasoline_prices/
 │   │   ├── login.css
 │   │   ├── menu.css                 # Styles cho trang menu tool
 │   │   ├── zkteco.css               # Styles cho trang danh sách thiết bị ZKTeco
-│   │   └── zkteco_device.css        # Styles cho trang chi tiết thiết bị ZKTeco
+│   │   ├── zkteco_device.css        # Styles cho trang chi tiết thiết bị ZKTeco
+│   │   └── wifi.css                 # Styles cho trang Monitoring WiFi AP
 │   └── logo.png
 │
 ├── scripts/
-│   └── test_zkteco_users.js         # Script test lấy danh sách user từ máy ZKTeco
+│   ├── test_zkteco_users.js         # Script test lấy danh sách user từ máy ZKTeco
+│   ├── test_snmp_wifi.js            # Script test ping + SNMP GET cơ bản cho WiFi AP
+│   ├── test_snmp_walk.js            # Script walk MIB sâu để khám phá OID
+│   └── test_snmp_clients.js         # Script xác minh OID client count trên Altai AP
+│
+├── brainstorm_idea/
+│   ├── info_WiFi.md                 # Kết quả nmap scan AP, phân tích subnet
+│   ├── WIFI_MONITORING_PLAN.md      # Plan phân phase 0–7 cho tính năng WiFi monitoring
+│   └── test_wifi.md                 # Runbook khám phá SNMP OID cho model WiFi AP mới
+│
+├── scripts/
+│   ├── migrate_wifi_db.js           # Script migrate 1 lần: wifi_aps + wifi_events fuel_data.db → wifi_moni.db
+│   └── ...
 │
 └── database/
-    └── fuel_data.db                 # SQLite database file (committed to repo)
+    ├── fuel_data.db                 # SQLite chính: users, fuel_prices, zkteco_devices, zkteco_employees
+    └── wifi_moni.db                 # SQLite riêng cho WiFi monitoring: wifi_aps, wifi_events
 ```
 
 ---
@@ -154,6 +174,14 @@ POST /api/update_trf_std  { trf_code: "NH", hang_20, hang_40, hang_45 }
 | GET | `/api/get_surcharge_table` | — | — | Bảng phụ thu (10 mức giá) |
 | GET | `/api/get_trf_std` | ✓ | user | Biểu cước hiện tại từ SQL Server |
 | POST | `/api/update_trf_std` | ✓ | admin | Cập nhật biểu cước SQL Server |
+| GET | `/wifi` | — | — | Render wifi.ejs (monitoring WiFi AP, admin check ở client) |
+| GET | `/api/wifi/aps` | ✓ | admin | Danh sách AP + trạng thái hiện tại |
+| POST | `/api/wifi/aps` | ✓ | admin | Thêm AP mới |
+| PUT | `/api/wifi/aps/:id` | ✓ | admin | Cập nhật cấu hình AP |
+| DELETE | `/api/wifi/aps/:id` | ✓ | admin | Xóa AP |
+| POST | `/api/wifi/aps/:id/check` | ✓ | admin | Check ngay 1 AP (ping + SNMP), cập nhật DB |
+| GET | `/api/wifi/aps/:id/events` | ✓ | admin | Lịch sử 50 sự kiện gần nhất |
+| POST | `/api/wifi/poll` | ✓ | admin | Trigger poll tất cả AP ngay (non-blocking) |
 | GET | `/zkteco` | — | — | Render zkteco.ejs (danh sách thiết bị, admin check ở client) |
 | GET | `/zkteco/devices/:id` | — | — | Render zkteco_device.ejs (chi tiết thiết bị, admin check ở client) |
 | GET | `/api/zkteco/devices` | ✓ | admin | Danh sách thiết bị ZKTeco |
@@ -201,6 +229,33 @@ POST /api/update_trf_std  { trf_code: "NH", hang_20, hang_40, hang_45 }
 | created_at | TEXT | ISO timestamp |
 | updated_at | TEXT | ISO timestamp |
 | last_login | TEXT | ISO timestamp |
+
+**Bảng `wifi_aps`** — cấu hình + trạng thái hiện tại của từng AP
+| Cột | Kiểu | Mô tả |
+|-----|------|-------|
+| id | INTEGER | Primary key |
+| name | TEXT | Tên AP (bắt buộc) |
+| ip | TEXT | Địa chỉ IP (bắt buộc) |
+| location | TEXT | Vị trí đặt AP |
+| snmp_community | TEXT | SNMP community string (default: `public`) |
+| snmp_client_oid | TEXT | OID walk đếm client — Altai: `1.3.6.1.4.1.27586.7.4.2.2.1.6` |
+| status | TEXT | `active` hoặc `inactive` |
+| last_status | TEXT | `up` \| `down` \| `unknown` |
+| last_ping_ms | INTEGER | Ping round-trip ms lần check gần nhất |
+| last_clients | INTEGER | Số client đang kết nối |
+| last_uptime_sec | INTEGER | Uptime tính bằng giây |
+| last_checked_at | TEXT | ISO timestamp lần check gần nhất |
+| created_at | TEXT | ISO timestamp |
+| updated_at | TEXT | ISO timestamp |
+
+**Bảng `wifi_events`** — lịch sử sự kiện up/down
+| Cột | Kiểu | Mô tả |
+|-----|------|-------|
+| id | INTEGER | Primary key |
+| ap_id | INTEGER | FK → wifi_aps.id |
+| event_type | TEXT | `up` hoặc `down` |
+| ping_ms | INTEGER | Ping ms lúc xảy ra (NULL nếu down) |
+| checked_at | TEXT | ISO timestamp |
 
 **Bảng `zkteco_devices`**
 | Cột | Kiểu | Mô tả |
@@ -272,6 +327,8 @@ MSSQL_PASSWORD=
 MSSQL_SERVER=
 MSSQL_DATABASE=
 MSSQL_ENCRYPT=false
+WIFI_POLL_INTERVAL=300000
+WIFI_DB_PATH=./database/wifi_moni.db
 MSSQL_TRUST_SERVER_CERTIFICATE=true
 ```
 
@@ -289,6 +346,8 @@ MSSQL_TRUST_SERVER_CERTIFICATE=true
 | cors | ^2.8.5 | Cross-origin |
 | body-parser | ^1.20.3 | Parse JSON body |
 | zkteco-js | ^1.7.0 | Giao tiếp thiết bị chấm công ZKTeco qua TCP/UDP |
+| ping | ^0.4.4 | ICMP ping check cho WiFi AP monitoring |
+| net-snmp | ^3.11.3 | SNMP v2c GET/Walk để lấy uptime + client count từ AP |
 
 ---
 
