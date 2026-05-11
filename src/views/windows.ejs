@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring Windows Server - MPC Service</title>
+    <link rel="stylesheet" href="/css/windows.css">
+</head>
+<body>
+
+    <header class="page-header">
+        <a href="/menu" class="btn-back">← Menu</a>
+        <div class="header-title">
+            <h1>🖥️ Monitoring Windows Server</h1>
+            <p>Giám sát trạng thái CPU, RAM, Disk các server Windows trong hệ thống</p>
+        </div>
+        <div class="header-user" id="headerUser"></div>
+    </header>
+
+    <main class="main-container">
+
+        <!-- Form thêm / sửa Server -->
+        <div class="card">
+            <div class="card-title">🖥️ <span id="formTitle">Thêm server mới</span></div>
+            <div class="form-actions" style="margin-top:0">
+                <button class="btn btn-primary btn-sm" id="btnToggleForm" onclick="showForm()">+ Thêm server</button>
+            </div>
+            <div id="serverFormArea" class="hidden">
+                <div class="form-grid" style="margin-top:16px">
+                    <div class="form-group">
+                        <label>Tên server *</label>
+                        <input type="text" id="fName" placeholder="VD: MPC-IIS">
+                    </div>
+                    <div class="form-group">
+                        <label>Host / IP *</label>
+                        <input type="text" id="fHost" placeholder="172.16.10.4">
+                    </div>
+                    <div class="form-group">
+                        <label>Port SSH</label>
+                        <input type="number" id="fPort" placeholder="22" value="22">
+                    </div>
+                    <div class="form-group">
+                        <label>Username *</label>
+                        <input type="text" id="fUsername" placeholder="Administrator">
+                    </div>
+                    <div class="form-group">
+                        <label>Password *</label>
+                        <input type="password" id="fPassword" placeholder="Mật khẩu SSH">
+                    </div>
+                    <div class="form-group">
+                        <label>Vị trí</label>
+                        <input type="text" id="fLocation" placeholder="VD: Server Room - Tủ A">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-primary" id="btnSubmit" onclick="submitForm()">Thêm server</button>
+                    <button class="btn btn-secondary hidden" id="btnCancel" onclick="cancelEdit()">Hủy</button>
+                </div>
+                <div id="formMessage" class="message hidden"></div>
+            </div>
+        </div>
+
+        <!-- Danh sách Server -->
+        <div class="card">
+            <div class="table-header">
+                <div class="card-title" style="margin-bottom:0">🖥️ Danh sách server</div>
+                <div class="table-actions">
+                    <span class="refresh-note" id="refreshNote"></span>
+                    <span class="poll-note">Auto-poll: 5 phút</span>
+                    <button class="btn btn-secondary btn-sm" onclick="pollAll()">⚡ Poll tất cả</button>
+                    <button class="btn btn-secondary btn-sm" onclick="loadServers()">🔄 Làm mới</button>
+                </div>
+            </div>
+            <div id="serverListMsg" class="message hidden"></div>
+            <div id="serverContainer">
+                <div class="empty-state">
+                    <span style="font-size:2rem">🖥️</span>
+                    <p>Đang tải danh sách server...</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal: Lịch sử sự kiện -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>📋 Lịch sử — <span id="modalServerName"></span></h3>
+                <button class="modal-close" onclick="closeModalBtn()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="modalContent">
+                    <div class="empty-state"><p>Đang tải...</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── Helpers ──────────────────────────────────────────────────────────
+        const API = (path, opts = {}) => {
+            const token = localStorage.getItem('token');
+            return fetch(path, {
+                ...opts,
+                headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', ...(opts.headers || {}) }
+            });
+        };
+
+        function esc(str) {
+            return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function showMsg(id, text, type) {
+            const el = document.getElementById(id);
+            el.className = 'message ' + type;
+            el.textContent = text;
+        }
+        function hideMsg(id) { document.getElementById(id).className = 'message hidden'; }
+
+        function formatTime(iso) {
+            if (!iso) return '—';
+            return new Date(iso).toLocaleString('vi-VN', { hour12: false });
+        }
+
+        function statusBadge(s) {
+            if (s === 'up')      return `<div class="status-wrap"><span class="status-dot dot-up"></span><span class="badge-up">Online</span></div>`;
+            if (s === 'down')    return `<div class="status-wrap"><span class="status-dot dot-down"></span><span class="badge-down">Offline</span></div>`;
+            return `<div class="status-wrap"><span class="status-dot dot-unknown"></span><span class="badge-unknown">Chưa biết</span></div>`;
+        }
+
+        function progressBar(pct, label) {
+            if (pct == null) return '<span class="metric-na">—</span>';
+            let cls = 'bar-green';
+            if (pct >= 85) cls = 'bar-red';
+            else if (pct >= 60) cls = 'bar-yellow';
+            return `<div class="progress-wrap" title="${label}: ${pct}%">
+                        <div class="progress-bar ${cls}" style="width:${Math.min(pct,100)}%"></div>
+                        <span class="progress-label">${pct}%</span>
+                    </div>`;
+        }
+
+        function diskSummary(diskJson) {
+            if (!diskJson) return '<span class="metric-na">—</span>';
+            try {
+                const disks = JSON.parse(diskJson);
+                const c = disks.find(d => d.name === 'C') || disks[0];
+                if (!c) return '<span class="metric-na">—</span>';
+                let cls = 'bar-green';
+                if (c.used_pct >= 85) cls = 'bar-red';
+                else if (c.used_pct >= 60) cls = 'bar-yellow';
+                const title = disks.map(d => `${d.name}: ${d.used_gb}/${d.total_gb}GB (${d.used_pct}%)`).join(' | ');
+                return `<div class="progress-wrap" title="${esc(title)}">
+                            <div class="progress-bar ${cls}" style="width:${Math.min(c.used_pct,100)}%"></div>
+                            <span class="progress-label">${c.name}: ${c.used_pct}%</span>
+                        </div>`;
+            } catch (_) { return '<span class="metric-na">—</span>'; }
+        }
+
+        // ── Form ──────────────────────────────────────────────────────────────
+        let editingId = null;
+
+        function showForm() {
+            document.getElementById('serverFormArea').classList.remove('hidden');
+            document.getElementById('btnToggleForm').classList.add('hidden');
+            document.getElementById('btnCancel').classList.remove('hidden');
+        }
+
+        function hideForm() {
+            document.getElementById('serverFormArea').classList.add('hidden');
+            document.getElementById('btnToggleForm').classList.remove('hidden');
+            document.getElementById('btnCancel').classList.add('hidden');
+        }
+
+        function cancelEdit() {
+            editingId = null;
+            document.getElementById('formTitle').textContent = 'Thêm server mới';
+            document.getElementById('btnSubmit').textContent = 'Thêm server';
+            ['fName','fHost','fUsername','fPassword','fLocation'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('fPort').value = '22';
+            hideMsg('formMessage');
+            hideForm();
+        }
+
+        function startEdit(server) {
+            editingId = server.id;
+            document.getElementById('formTitle').textContent = 'Cập nhật server';
+            document.getElementById('btnSubmit').textContent = 'Lưu thay đổi';
+            document.getElementById('fName').value     = server.name || '';
+            document.getElementById('fHost').value     = server.host || '';
+            document.getElementById('fPort').value     = server.port || 22;
+            document.getElementById('fUsername').value = server.username || '';
+            document.getElementById('fPassword').value = server.password || '';
+            document.getElementById('fLocation').value = server.location || '';
+            showForm();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function submitForm() {
+            const body = {
+                name:     document.getElementById('fName').value.trim(),
+                host:     document.getElementById('fHost').value.trim(),
+                port:     parseInt(document.getElementById('fPort').value) || 22,
+                username: document.getElementById('fUsername').value.trim(),
+                password: document.getElementById('fPassword').value,
+                location: document.getElementById('fLocation').value.trim() || null,
+            };
+            hideMsg('formMessage');
+            const btn = document.getElementById('btnSubmit');
+            btn.disabled = true;
+            try {
+                const url    = editingId ? `/api/windows/servers/${editingId}` : '/api/windows/servers';
+                const method = editingId ? 'PUT' : 'POST';
+                const res    = await API(url, { method, body: JSON.stringify(body) });
+                const data   = await res.json();
+                if (data.success) {
+                    showMsg('formMessage', data.message, 'success');
+                    cancelEdit();
+                    loadServers();
+                } else {
+                    showMsg('formMessage', data.error || 'Lỗi không xác định', 'error');
+                }
+            } catch (e) {
+                showMsg('formMessage', 'Lỗi kết nối server', 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // ── Check / Restart / Shutdown / Delete ───────────────────────────────
+        async function checkServer(id, name) {
+            const btn = document.getElementById('btn-check-' + id);
+            if (btn) { btn.disabled = true; btn.textContent = '...'; }
+            try {
+                const res  = await API(`/api/windows/servers/${id}/check`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    showMsg('serverListMsg', `${name}: Online — CPU ${data.cpu}%, RAM ${data.ram}%`, 'success');
+                } else {
+                    showMsg('serverListMsg', `${name}: ${data.error || 'Offline / Lỗi kết nối'}`, 'error');
+                }
+                loadServers();
+            } catch (e) {
+                showMsg('serverListMsg', 'Lỗi kết nối', 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = '🔍'; }
+            }
+        }
+
+        async function restartServer(id, name) {
+            if (!confirm(`Restart server "${name}"?\nServer sẽ khởi động lại ngay lập tức.`)) return;
+            try {
+                const res  = await API(`/api/windows/servers/${id}/restart`, { method: 'POST' });
+                const data = await res.json();
+                showMsg('serverListMsg', data.success ? `Đã gửi lệnh restart "${name}"` : (data.error || 'Lỗi restart'), data.success ? 'info' : 'error');
+                if (data.success) loadServers();
+            } catch (e) {
+                showMsg('serverListMsg', 'Lỗi kết nối', 'error');
+            }
+        }
+
+        async function shutdownServer(id, name) {
+            if (!confirm(`Shutdown server "${name}"?\nServer sẽ tắt hoàn toàn. Bạn chắc chắn?`)) return;
+            try {
+                const res  = await API(`/api/windows/servers/${id}/shutdown`, { method: 'POST' });
+                const data = await res.json();
+                showMsg('serverListMsg', data.success ? `Đã gửi lệnh shutdown "${name}"` : (data.error || 'Lỗi shutdown'), data.success ? 'info' : 'error');
+                if (data.success) loadServers();
+            } catch (e) {
+                showMsg('serverListMsg', 'Lỗi kết nối', 'error');
+            }
+        }
+
+        async function deleteServer(id, name) {
+            if (!confirm(`Xóa server "${name}"?\nThao tác này sẽ xóa toàn bộ lịch sử sự kiện.`)) return;
+            try {
+                const res  = await API(`/api/windows/servers/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    showMsg('serverListMsg', 'Đã xóa server thành công', 'success');
+                    loadServers();
+                } else {
+                    showMsg('serverListMsg', data.error || 'Lỗi xóa server', 'error');
+                }
+            } catch (e) {
+                showMsg('serverListMsg', 'Lỗi kết nối', 'error');
+            }
+        }
+
+        async function pollAll() {
+            try {
+                const res  = await API('/api/windows/poll', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    showMsg('serverListMsg', 'Đã kích hoạt poll — kết quả sẽ cập nhật sau vài giây', 'info');
+                    setTimeout(loadServers, 8000);
+                }
+            } catch (e) {
+                showMsg('serverListMsg', 'Lỗi kết nối', 'error');
+            }
+        }
+
+        // ── Event history modal ───────────────────────────────────────────────
+        async function showHistory(id, name) {
+            document.getElementById('modalServerName').textContent = name;
+            document.getElementById('modalContent').innerHTML = '<div class="empty-state"><p>Đang tải...</p></div>';
+            document.getElementById('modalOverlay').classList.add('open');
+
+            try {
+                const res  = await API(`/api/windows/servers/${id}/events`);
+                const data = await res.json();
+                if (!data.success || !data.events.length) {
+                    document.getElementById('modalContent').innerHTML = '<div class="empty-state"><p>Chưa có sự kiện nào.</p></div>';
+                    return;
+                }
+                const typeLabel = {
+                    up:       '🟢 Online',
+                    down:     '🔴 Offline',
+                    restart:  '🔄 Restart',
+                    shutdown: '⏻ Shutdown',
+                };
+                const typeClass = {
+                    up:       'event-up',
+                    down:     'event-down',
+                    restart:  'event-restart',
+                    shutdown: 'event-shutdown',
+                };
+                const rows = data.events.map(e => `
+                    <tr>
+                        <td>${esc(formatTime(e.checked_at))}</td>
+                        <td class="${typeClass[e.event_type] || ''}">${typeLabel[e.event_type] || esc(e.event_type)}</td>
+                        <td class="metric-val">${e.cpu_pct != null ? e.cpu_pct + '%' : '—'}</td>
+                        <td class="metric-val">${e.ram_pct != null ? e.ram_pct + '%' : '—'}</td>
+                        <td class="event-msg">${esc(e.message || '')}</td>
+                    </tr>`).join('');
+                document.getElementById('modalContent').innerHTML = `
+                    <table class="event-table">
+                        <thead><tr><th>Thời gian</th><th>Sự kiện</th><th>CPU</th><th>RAM</th><th>Chi tiết</th></tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>`;
+            } catch (e) {
+                document.getElementById('modalContent').innerHTML = '<div class="empty-state"><p>Lỗi tải dữ liệu.</p></div>';
+            }
+        }
+
+        function closeModal(e) { if (e.target === document.getElementById('modalOverlay')) closeModalBtn(); }
+        function closeModalBtn() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+        // ── Render table ──────────────────────────────────────────────────────
+        function renderServers(servers) {
+            const container = document.getElementById('serverContainer');
+            if (!servers.length) {
+                container.innerHTML = `<div class="empty-state"><span style="font-size:2rem">🖥️</span><p>Chưa có server nào. Thêm server đầu tiên ở trên.</p></div>`;
+                return;
+            }
+            const rows = servers.map(s => `
+                <tr>
+                    <td data-label="Tên server">
+                        <div class="server-name">${esc(s.name)}</div>
+                        ${s.location ? `<div class="server-loc">${esc(s.location)}</div>` : ''}
+                    </td>
+                    <td data-label="Host"><span class="server-host">${esc(s.host)}:${s.port || 22}</span></td>
+                    <td data-label="Trạng thái">${statusBadge(s.last_status)}</td>
+                    <td data-label="CPU">${progressBar(s.last_cpu_pct, 'CPU')}</td>
+                    <td data-label="RAM">${progressBar(s.last_ram_pct, 'RAM')}</td>
+                    <td data-label="Disk C:">${diskSummary(s.last_disk_json)}</td>
+                    <td data-label="Kiểm tra lúc" style="font-size:0.78rem;color:var(--text-muted)">${s.last_checked_at ? formatTime(s.last_checked_at) : '—'}</td>
+                    <td data-label="Thao tác">
+                        <div class="action-group">
+                            <button id="btn-check-${s.id}" class="btn btn-secondary btn-sm" onclick="checkServer(${s.id},'${esc(s.name).replace(/'/g,"\\'")}')">🔍</button>
+                            <button class="btn btn-secondary btn-sm" onclick="showHistory(${s.id},'${esc(s.name).replace(/'/g,"\\'")}')">📋</button>
+                            <button class="btn btn-secondary btn-sm" onclick='startEdit(${JSON.stringify(s)})'>✏️</button>
+                            <button class="btn btn-warning btn-sm" onclick="restartServer(${s.id},'${esc(s.name).replace(/'/g,"\\'")}')">🔄</button>
+                            <button class="btn btn-warning btn-sm" onclick="shutdownServer(${s.id},'${esc(s.name).replace(/'/g,"\\'")}')">⏻</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteServer(${s.id},'${esc(s.name).replace(/'/g,"\\'")}')">🗑️</button>
+                        </div>
+                    </td>
+                </tr>`).join('');
+
+            container.innerHTML = `
+                <table class="server-table">
+                    <thead>
+                        <tr>
+                            <th>Tên server</th>
+                            <th>Host</th>
+                            <th>Trạng thái</th>
+                            <th>CPU</th>
+                            <th>RAM</th>
+                            <th>Disk C:</th>
+                            <th>Kiểm tra lúc</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>`;
+        }
+
+        // ── Load servers + auto-refresh ───────────────────────────────────────
+        async function loadServers() {
+            hideMsg('serverListMsg');
+            try {
+                const res = await API('/api/windows/servers');
+                if (res.status === 401 || res.status === 403) { window.location.href = '/login'; return; }
+                const data = await res.json();
+                if (data.success) {
+                    renderServers(data.servers);
+                    document.getElementById('refreshNote').textContent = 'Cập nhật lúc ' + new Date().toLocaleTimeString('vi-VN');
+                } else {
+                    showMsg('serverListMsg', data.error || 'Lỗi tải danh sách', 'error');
+                }
+            } catch (e) {
+                showMsg('serverListMsg', 'Lỗi kết nối server', 'error');
+            }
+        }
+
+        // Auto-refresh mỗi 30 giây
+        setInterval(loadServers, 30000);
+
+        // ── Init ──────────────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', async function () {
+            const token = localStorage.getItem('token');
+            if (!token) { window.location.href = '/login'; return; }
+            try {
+                const res = await fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } });
+                if (!res.ok) { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login'; return; }
+                const data = await res.json();
+                if (!data.user || data.user.role !== 'admin') {
+                    alert('Tính năng này chỉ dành cho Admin.');
+                    window.location.href = '/menu';
+                    return;
+                }
+                const u = data.user;
+                document.getElementById('headerUser').textContent = (u.full_name || u.username || '') + ' (Admin)';
+            } catch (e) {
+                window.location.href = '/login'; return;
+            }
+            loadServers();
+        });
+    </script>
+
+</body>
+</html>

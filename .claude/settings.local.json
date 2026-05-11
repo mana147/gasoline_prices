@@ -31,7 +31,11 @@
       "Bash(sqlite3 database/wifi_moni.db \"SELECT COUNT\\(*\\) || ' events' FROM wifi_events;\")",
       "Bash(node scripts/test_snmp_wifi.js public 172.16.10.21 172.16.10.20 172.16.10.19 172.16.10.18 172.16.10.17 172.16.10.16)",
       "Bash(node scripts/test_snmp_clients.js public 172.16.10.21 172.16.10.20 172.16.10.19 172.16.10.18 172.16.10.17 172.16.10.16)",
-      "Bash(sqlite3 database/wifi_moni.db \"SELECT id, name, ip, last_status, last_clients FROM wifi_aps ORDER BY name ASC;\")"
+      "Bash(sqlite3 database/wifi_moni.db \"SELECT id, name, ip, last_status, last_clients FROM wifi_aps ORDER BY name ASC;\")",
+      "Bash(node -e \"require\\('./src/config/db'\\)\")",
+      "Bash(node -e \"require\\('./src/services/windows.service'\\)\")",
+      "Bash(sqlite3 ./database/windows_moni.db \".tables\")",
+      "Bash(sqlite3 ./database/windows_moni.db \".schema windows_servers\")"
     ]
   }
 }

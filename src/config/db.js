@@ -114,4 +114,55 @@ const sqlite_wifi_db = new sqlite3.Database(WIFI_DB_PATH, (err) => {
     });
 });
 
-module.exports = { sqlite_db, sqlite_wifi_db, mssqlConfig, connectMSSQL };
+const WINDOWS_DB_PATH = process.env.WINDOWS_DB_PATH || './database/windows_moni.db';
+
+const sqlite_windows_db = new sqlite3.Database(WINDOWS_DB_PATH, (err) => {
+    if (err) {
+        console.error('> ERROR: Could not connect to Windows monitoring database:', err.message);
+        return;
+    }
+    console.log('> LOG: Connected to Windows monitoring database -' + WINDOWS_DB_PATH);
+    sqlite_windows_db.serialize(() => {
+        sqlite_windows_db.run(`
+            CREATE TABLE IF NOT EXISTS windows_servers (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                name            TEXT    NOT NULL,
+                host            TEXT    NOT NULL,
+                port            INTEGER DEFAULT 22,
+                username        TEXT    NOT NULL,
+                password        TEXT    NOT NULL,
+                location        TEXT,
+                status          TEXT    DEFAULT 'active',
+                last_status     TEXT    DEFAULT 'unknown',
+                last_cpu_pct    REAL,
+                last_ram_pct    REAL,
+                last_disk_json  TEXT,
+                last_error      TEXT,
+                last_checked_at TEXT,
+                created_at      TEXT,
+                updated_at      TEXT
+            )
+        `, (e) => {
+            if (e) console.error('> ERROR: Could not create windows_servers table:', e.message);
+            else console.log('> LOG: Table windows_servers ready');
+        });
+
+        sqlite_windows_db.run(`
+            CREATE TABLE IF NOT EXISTS windows_events (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                server_id   INTEGER NOT NULL,
+                event_type  TEXT    NOT NULL,
+                message     TEXT,
+                cpu_pct     REAL,
+                ram_pct     REAL,
+                checked_at  TEXT    NOT NULL,
+                FOREIGN KEY (server_id) REFERENCES windows_servers(id) ON DELETE CASCADE
+            )
+        `, (e) => {
+            if (e) console.error('> ERROR: Could not create windows_events table:', e.message);
+            else console.log('> LOG: Table windows_events ready');
+        });
+    });
+});
+
+module.exports = { sqlite_db, sqlite_wifi_db, sqlite_windows_db, mssqlConfig, connectMSSQL };
