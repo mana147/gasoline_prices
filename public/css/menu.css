@@ -5,18 +5,20 @@
 :root {
   color-scheme: dark;
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --bg: #07080a;
-  --surface: #101111;
-  --surface-strong: #141617;
-  --border: rgba(255, 255, 255, 0.06);
-  --border-strong: rgba(255, 255, 255, 0.12);
-  --text: #f9f9f9;
-  --text-muted: #9c9c9d;
-  --text-subtle: #6a6b6c;
-  --accent: #ff6363;
-  --accent-soft: rgba(255, 99, 99, 0.15);
-  --success: #5fc992;
-  --info: #55b3ff;
+  --bg: #0b0e11;
+  --surface: #1e2329;
+  --surface-strong: #2b3139;
+  --surface-soft: rgba(250, 250, 250, 0.06);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --text: #ffffff;
+  --text-muted: #929aa5;
+  --text-subtle: #707a8a;
+  --accent: #fcd535;
+  --accent-active: #f0b90b;
+  --on-accent: #181a20;
+  --success: #0ecb81;
+  --info: #3b82f6;
 }
 
 * { box-sizing: border-box; }
@@ -40,9 +42,7 @@ img { display: block; max-width: 100%; }
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(16, 17, 17, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: #0b0e11;
   border-bottom: 1px solid var(--border);
   padding: 0 32px;
   height: 64px;
@@ -140,22 +140,20 @@ img { display: block; max-width: 100%; }
   flex-direction: column;
   gap: 14px;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(252, 213, 53, 0.12);
   border-radius: 22px;
   padding: 28px;
   text-decoration: none;
   color: var(--text);
   transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.24);
   cursor: pointer;
 }
 
-.tool-card:not(.disabled):hover {
-  border-color: var(--border-strong);
+.tool-card:hover {
+  border-color: var(--accent);
   transform: translateY(-3px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.06);
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.28);
 }
 
 .tool-card.disabled {
@@ -203,9 +201,9 @@ img { display: block; max-width: 100%; }
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
-  background: rgba(95, 201, 146, 0.12);
-  color: #5fc992;
-  border: 1px solid rgba(95, 201, 146, 0.2);
+  background: rgba(252, 213, 53, 0.12);
+  color: var(--accent);
+  border: 1px solid rgba(252, 213, 53, 0.18);
 }
 
 .badge-active::before {

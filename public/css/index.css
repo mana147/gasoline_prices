@@ -5,20 +5,21 @@
 :root {
   color-scheme: dark;
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --bg: #07080a;
-  --surface: #101111;
-  --surface-strong: #141617;
-  --surface-muted: rgba(255, 255, 255, 0.03);
-  --border: rgba(255, 255, 255, 0.06);
-  --border-strong: rgba(255, 255, 255, 0.12);
-  --text: #f9f9f9;
-  --text-muted: #9c9c9d;
-  --text-subtle: #6a6b6c;
-  --accent: #ff6363;
-  --accent-soft: rgba(255, 99, 99, 0.15);
-  --success: #5fc992;
-  --danger: #ff6363;
-  --info: #55b3ff;
+  --bg: #0b0e11;
+  --surface: #1e2329;
+  --surface-strong: #2b3139;
+  --surface-soft: rgba(250, 250, 250, 0.08);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --text: #ffffff;
+  --text-muted: #929aa5;
+  --text-subtle: #707a8a;
+  --accent: #fcd535;
+  --accent-active: #f0b90b;
+  --on-accent: #181a20;
+  --success: #0ecb81;
+  --danger: #f6465d;
+  --info: #3b82f6;
 }
 
 * {
@@ -182,9 +183,9 @@ input:focus {
 }
 
 .btn {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: transparent;
 }
 
 .btn:hover,
@@ -192,7 +193,7 @@ input:focus {
 .toggle-table-btn:hover,
 .copy-from-result-btn:hover,
 .update-btn:hover {
-  opacity: 0.88;
+  opacity: 0.95;
   transform: translateY(-1px);
 }
 
@@ -255,7 +256,7 @@ input:focus {
   min-width: 112px;
   padding: 12px 18px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   border-radius: 999px;
   font-weight: 700;
 }
@@ -266,6 +267,14 @@ input:focus {
 .update-form-grid {
   display: grid;
   gap: 16px;
+}
+
+.surcharge-item.hang {
+  background: rgba(252, 213, 53, 0.12);
+}
+
+.surcharge-item.rong {
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .info-grid {
