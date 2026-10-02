@@ -35,14 +35,14 @@ function getFuelByTitle(DATA, brand, title) {
 
 async function fetchAndCalculateFuelPrice(date) {
     const apiData = await getFuelByDate(date);
-    const result = getFuelByTitle(apiData, "petrolimex", "DO 0,05S-II");
+    const result = getFuelByTitle(apiData, "petrolimex", "DO 0,05S Mức 2");
     const giaDauDO = result.zone1_price || 0;
 
     return {
         date,
         brand: "petrolimex",
-        title: "DO 0,05S-II",
-        zone1_price: result.zone1_price,
+        title: "DO 0,05S Mức 2",
+        zone1_price: result.zone1_price,    
         zone2_price: result.zone2_price,
         hang_20: tinhGiaCuocTheoDauDO(giaDauDO, "hang_20", 0).phuThu,
         hang_40: tinhGiaCuocTheoDauDO(giaDauDO, "hang_40", 0).phuThu,
